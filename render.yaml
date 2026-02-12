@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: centralbaja-archivo-vivo
+    runtime: node
+    plan: starter
+    rootDir: centralbaja-archivo-vivo
+    buildCommand: npm ci
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_KEY
+        sync: false
+      - key: DATA_DIR
+        value: /var/data
+      - key: UPLOADS_DIR
+        value: /var/uploads
+    disk:
+      name: archivo-vivo-disk
+      mountPath: /var
+      sizeGB: 1

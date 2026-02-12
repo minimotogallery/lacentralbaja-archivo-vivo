@@ -1,0 +1,12 @@
+# local db + WAL
+/data/db.sqlite*
+
+# uploads
+/uploads/*
+!/uploads/.gitkeep
+
+# deps
+/node_modules/
+
+# misc
+.DS_Store

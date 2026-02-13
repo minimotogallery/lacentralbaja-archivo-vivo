@@ -1,0 +1,39 @@
+{
+  "project": {
+    "title": "Espacio lanzadera La Central Baja en Murcia",
+    "tagline": "Ayuda a La Central Baja a iniciar su actividad",
+    "location": "San Pío X, Murcia, España",
+    "category": "Cultural",
+    "links": {
+      "goteo": "https://www.goteo.org/project/espacio-lanzadera-la-central-baja-en-murcia",
+      "instagram": "https://www.instagram.com/lacentralbaja/"
+    },
+    "goals": {
+      "min": 5000,
+      "opt": 8300,
+      "raised": 0,
+      "daysLeft": 40
+    },
+    "description": [
+      "La Central Baja es un proyecto colectivo para crear un espacio físico estable dedicado a la cultura contemporánea, comunitaria y autogestionada en la ciudad de Murcia.",
+      "El proyecto se desarrollará en una nave industrial en el barrio de San Pío X: talleres de producción artística, coworking cultural, exposiciones, eventos musicales, encuentros y actividades formativas.",
+      "Este crowdfunding es una herramienta inmediata para asegurar el espacio y abrir La Central Baja a la comunidad." 
+    ]
+  },
+  "entries": [
+    {
+      "id": "seed-001",
+      "date": "2026-02-11",
+      "type": "hito",
+      "title": "Lanzamiento del crowdfunding en Goteo",
+      "body": "Se publica el primer carrusel en Instagram y se activa la difusión inicial.",
+      "tags": ["goteo","lanzamiento","instagram"],
+      "links": [
+        "https://www.goteo.org/project/espacio-lanzadera-la-central-baja-en-murcia",
+        "https://www.instagram.com/lacentralbaja/"
+      ],
+      "archived": false,
+      "importance": "alto"
+    }
+  ]
+}

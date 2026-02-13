@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>La Central Baja — Archivo vivo</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="wrap">
+    <a class="brand" href="#" data-tab="board" aria-label="Inicio">
+      <img class="logo" src="./assets/capa-2.png" alt="La Central Baja" />
+    </a>
+
+    <nav class="actions" aria-label="Navegación">
+      <button class="btn menu" id="btnMenu" aria-expanded="false" aria-controls="navLinks">Menu</button>
+      <div class="navlinks" id="navLinks">
+        <a class="btn" data-tab="board" href="#">Tablón</a>
+        <a class="btn" data-tab="artists" href="#">Artistas</a>
+        <a class="btn" data-tab="updates" href="#">Updates</a>
+        <a class="btn" id="btnGoteo" href="https://www.goteo.org/project/espacio-lanzadera-la-central-baja-en-murcia" target="_blank" rel="noreferrer">Goteo</a>
+        <button class="btn" id="btnAdd">Añadir hito</button>
+        <!-- Export/Import oculto para visitantes (se puede reactivar cuando haga falta) -->
+      </div>
+    </nav>
+  </header>
+
+  <div id="cursorStar" class="cursor-star" aria-hidden="true"></div>
+
+  <main class="wrap">
+    <section class="card tab" id="boardCard" data-tabpanel="board">
+      <div class="board-head">
+        <div>
+          <h2>Tablón de imaginarios</h2>
+          <p class="muted">Sube texto e imágenes: cómo te imaginas La Central Baja. Ideas, deseos, necesidades, referencias.</p>
+        </div>
+        <div class="board-cta">
+          <button class="btn" id="btnAddBoard">Publicar</button>
+        </div>
+      </div>
+
+      <div class="masonry" id="board"></div>
+
+      <details class="subtle">
+        <summary>Crowdfunding (info)</summary>
+        <div class="subtle-body">
+          <p class="muted">Si quieres apoyar la apertura del espacio:</p>
+          <p><a class="pill" href="https://www.goteo.org/project/espacio-lanzadera-la-central-baja-en-murcia" target="_blank" rel="noreferrer">Ir a Goteo</a></p>
+        </div>
+      </details>
+    </section>
+
+    <section class="card tab" id="artistsCard" data-tabpanel="artists">
+      <div class="project-top">
+        <div>
+          <h2>Artistas trabajando en La Central Baja</h2>
+          <p class="muted">Un archivo vivo de quién está produciendo, investigando o ensayando en el espacio.</p>
+        </div>
+        <div class="project-links">
+          <button class="btn" id="btnAddArtist">Añadir artista</button>
+        </div>
+      </div>
+
+      <div class="masonry" id="artists"></div>
+    </section>
+
+    <section class="card" id="projectCard">
+      <div class="project-top">
+        <div>
+          <h2 id="projectTitle">Proyecto</h2>
+          <p id="projectTagline" class="muted"></p>
+          <p class="muted" id="projectMeta"></p>
+        </div>
+        <div class="project-links">
+          <a class="pill" id="projectLink" target="_blank" rel="noreferrer">Goteo</a>
+          <a class="pill" id="igLink" target="_blank" rel="noreferrer">Instagram</a>
+        </div>
+      </div>
+
+      <div class="progress">
+        <div class="progress-row">
+          <div>
+            <div class="k">Mínimo</div>
+            <div class="v" id="minGoal">—</div>
+          </div>
+          <div>
+            <div class="k">Óptimo</div>
+            <div class="v" id="optGoal">—</div>
+          </div>
+          <div>
+            <div class="k">Obtenido</div>
+            <div class="v" id="raised">—</div>
+          </div>
+          <div>
+            <div class="k">Quedan</div>
+            <div class="v" id="daysLeft">—</div>
+          </div>
+        </div>
+        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="fill" id="barFill"></div>
+        </div>
+      </div>
+
+      <details>
+        <summary>Descripción base</summary>
+        <div class="desc" id="projectDesc"></div>
+      </details>
+    </section>
+
+    <section class="card tab" data-tabpanel="updates">
+      <div class="filters">
+        <div class="search">
+          <input id="q" type="search" placeholder="Buscar por título, texto o tags…" />
+        </div>
+        <div class="chips" id="typeChips"></div>
+        <div class="toggle">
+          <label><input type="checkbox" id="showArchived" /> Mostrar archivados</label>
+        </div>
+      </div>
+
+      <div class="timeline" id="timeline"></div>
+    </section>
+  </main>
+
+  <dialog id="dlgBoard">
+    <form method="dialog" class="dlg">
+      <div class="dlg-head">
+        <h3>Publicar en el tablón</h3>
+        <button class="x" value="cancel" aria-label="Cerrar">×</button>
+      </div>
+
+      <div class="grid">
+        <label class="col2">
+          Título
+          <input name="title" type="text" required placeholder="Ej: Un patio de pruebas / Un laboratorio de sonido" />
+        </label>
+
+        <label class="col2">
+          Tu texto
+          <textarea name="body" rows="5" placeholder="Cómo te imaginas La Central Baja, deseos, ideas, necesidades…"></textarea>
+        </label>
+
+        <label class="col2">
+          Imagen (opcional)
+          <input name="image" type="file" accept="image/*" />
+        </label>
+
+        <label>
+          Nombre (opcional)
+          <input name="author" type="text" placeholder="Anónimo" />
+        </label>
+
+        <label>
+          Tags (opcional)
+          <input name="tags" type="text" placeholder="talleres, barrio, música" />
+        </label>
+      </div>
+
+      <div class="dlg-actions">
+        <button class="btn" value="cancel">Cancelar</button>
+        <button class="btn primary" id="btnSaveBoard" value="default">Publicar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgArtist">
+    <form method="dialog" class="dlg">
+      <div class="dlg-head">
+        <h3>Añadir artista</h3>
+        <button class="x" value="cancel" aria-label="Cerrar">×</button>
+      </div>
+
+      <div class="grid">
+        <label class="col2">
+          Nombre / proyecto
+          <input name="name" type="text" required placeholder="Nombre artístico / colectivo" />
+        </label>
+
+        <label class="col2">
+          Bio / en qué está trabajando
+          <textarea name="bio" rows="4" placeholder="Qué está haciendo en La Central Baja…"></textarea>
+        </label>
+
+        <label>
+          Rol (opcional)
+          <input name="role" type="text" placeholder="artes visuales, música, performance…" />
+        </label>
+
+        <label>
+          Enlace (opcional)
+          <input name="link" type="url" placeholder="https://instagram.com/..." />
+        </label>
+
+        <label class="col2">
+          Imagen (opcional)
+          <input name="image" type="file" accept="image/*" />
+        </label>
+
+        <label class="col2">
+          Tags (opcional)
+          <input name="tags" type="text" placeholder="residencia, ensayo, exposición" />
+        </label>
+      </div>
+
+      <div class="dlg-actions">
+        <button class="btn" value="cancel">Cancelar</button>
+        <button class="btn primary" id="btnSaveArtist" value="default">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg">
+    <form method="dialog" class="dlg">
+      <div class="dlg-head">
+        <h3>Añadir hito / update</h3>
+        <button class="x" value="cancel" aria-label="Cerrar">×</button>
+      </div>
+
+      <div class="grid">
+        <label>
+          Fecha
+          <input name="date" type="date" required />
+        </label>
+        <label>
+          Tipo
+          <select name="type">
+            <option value="update">update</option>
+            <option value="hito">hito</option>
+            <option value="evento">evento</option>
+            <option value="prensa">prensa</option>
+            <option value="finanzas">finanzas</option>
+            <option value="contenido">contenido</option>
+            <option value="aliados">aliados</option>
+          </select>
+        </label>
+
+        <label class="col2">
+          Título
+          <input name="title" type="text" required placeholder="Ej: 1er post publicado / 340€ en 1h" />
+        </label>
+
+        <label class="col2">
+          Texto
+          <textarea name="body" rows="5" placeholder="Qué pasó, por qué importa, próximos pasos…"></textarea>
+        </label>
+
+        <label class="col2">
+          Tags (separados por comas)
+          <input name="tags" type="text" placeholder="Ej: goteo, instagram, san pío x" />
+        </label>
+
+        <label class="col2">
+          Links (uno por línea)
+          <textarea name="links" rows="3" placeholder="https://…"></textarea>
+        </label>
+
+        <label>
+          Archivado
+          <select name="archived">
+            <option value="false">no</option>
+            <option value="true">sí</option>
+          </select>
+        </label>
+
+        <label>
+          Importancia
+          <select name="importance">
+            <option value="normal">normal</option>
+            <option value="alto">alto</option>
+            <option value="bajo">bajo</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="dlg-actions">
+        <button class="btn" value="cancel">Cancelar</button>
+        <button class="btn primary" id="btnSave" value="default">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="tplItem">
+    <article class="item">
+      <div class="dot"></div>
+      <div class="content">
+        <div class="topline">
+          <div class="meta">
+            <span class="date"></span>
+            <span class="type"></span>
+            <span class="badge" hidden></span>
+          </div>
+          <div class="item-actions">
+            <button class="linkbtn" data-act="archive"></button>
+            <button class="linkbtn" data-act="delete">Eliminar</button>
+          </div>
+        </div>
+        <h4 class="title"></h4>
+        <p class="body"></p>
+        <div class="tags"></div>
+        <div class="links"></div>
+      </div>
+    </article>
+  </template>
+
+  <footer class="wrap foot">
+    <p class="muted">La Central Baja — Murcia · San Pío X</p>
+  </footer>
+
+  <script src="./app.js" type="module"></script>
+</body>
+</html>

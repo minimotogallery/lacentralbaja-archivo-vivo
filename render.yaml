@@ -3,7 +3,7 @@ services:
     name: centralbaja-archivo-vivo
     runtime: node
     plan: starter
-    rootDir: centralbaja-archivo-vivo
+    rootDir: .
     buildCommand: npm ci
     startCommand: npm start
     autoDeploy: true

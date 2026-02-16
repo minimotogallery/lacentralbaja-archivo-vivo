@@ -33,8 +33,9 @@ function normalizeLinks(s) {
 }
 
 async function loadSeed() {
-  const res = await fetch('./data/seed.json', { cache: 'no-store' });
-  if (!res.ok) throw new Error('No se pudo cargar seed.json');
+  // Served by the backend so it can keep project stats (e.g., crowdfunding) up-to-date.
+  const res = await fetch('/api/seed', { cache: 'no-store' });
+  if (!res.ok) throw new Error('No se pudo cargar seed');
   return res.json();
 }
 
@@ -43,9 +44,12 @@ function loadState(seed) {
   if (!raw) return { ...seed, entries: [...seed.entries] };
   try {
     const st = JSON.parse(raw);
-    // merge: prefer local entries, but keep seed project fields if missing
+    // merge: prefer local entries, but DO NOT override server project.goals (keeps crowdfunding bar updated)
+    const mergedProject = { ...seed.project, ...(st.project || {}) };
+    mergedProject.goals = seed.project?.goals || mergedProject.goals;
+
     return {
-      project: { ...seed.project, ...(st.project || {}) },
+      project: mergedProject,
       entries: Array.isArray(st.entries) ? st.entries : [...seed.entries]
     };
   } catch {

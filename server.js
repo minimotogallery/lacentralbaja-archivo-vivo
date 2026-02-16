@@ -17,6 +17,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 
 const app = express();
+app.use(express.json({ limit: '200kb' }));
 
 // --- DB
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -89,6 +90,33 @@ if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
 }
 app.use(express.static(__dirname));
 
+// --- seed/project config
+const seedPath = path.join(__dirname, 'data', 'seed.json');
+const projectOverridePath = path.join(DATA_DIR, 'project.json');
+
+function readJsonSafe(p, fallback) {
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJsonSafe(p, obj) {
+  fs.writeFileSync(p, JSON.stringify(obj, null, 2), 'utf8');
+}
+
+function getMergedSeed() {
+  const seed = readJsonSafe(seedPath, { project: {}, entries: [] });
+  const override = readJsonSafe(projectOverridePath, null);
+  if (override && typeof override === 'object') {
+    seed.project = { ...(seed.project || {}), ...override };
+    // Merge goals carefully
+    seed.project.goals = { ...(seed.project?.goals || {}), ...(override.goals || {}) };
+  }
+  return seed;
+}
+
 // --- API
 function requireAdmin(req, res) {
   if (!ADMIN_KEY || req.get('x-admin-key') !== ADMIN_KEY) {
@@ -97,6 +125,44 @@ function requireAdmin(req, res) {
   }
   return true;
 }
+
+app.get('/api/seed', (req, res) => {
+  res.json(getMergedSeed());
+});
+
+app.get('/api/project', (req, res) => {
+  res.json(getMergedSeed().project || {});
+});
+
+// Admin: update project/goals (persists to Render disk via DATA_DIR)
+app.put('/api/admin/project', (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  const incoming = req.body && typeof req.body === 'object' ? req.body : {};
+  const cur = readJsonSafe(projectOverridePath, {});
+
+  const next = { ...cur, ...incoming };
+  if (incoming.goals && typeof incoming.goals === 'object') {
+    next.goals = { ...(cur.goals || {}), ...(incoming.goals || {}) };
+  }
+
+  // Basic validation/coercion for goals fields
+  if (next.goals) {
+    for (const k of ['min', 'opt', 'raised', 'daysLeft']) {
+      if (k in next.goals) {
+        const v = next.goals[k];
+        const num = (v === '' || v === null || typeof v === 'undefined') ? undefined : Number(v);
+        if (typeof num !== 'undefined' && Number.isNaN(num)) {
+          return res.status(400).json({ error: `bad_goals_${k}` });
+        }
+        if (typeof num !== 'undefined') next.goals[k] = num;
+      }
+    }
+  }
+
+  writeJsonSafe(projectOverridePath, next);
+  res.json({ ok: true, project: getMergedSeed().project });
+});
 
 // Public board: only approved
 app.get('/api/board', (req, res) => {

@@ -247,7 +247,12 @@ function openAddDialog(state, filter) {
   };
   dlg.addEventListener('close', cleanup);
 
-  btn.onclick = async () => {
+  // Ensure close buttons always work (even after file picker cancel, etc.)
+  dlg.querySelectorAll('[data-close]').forEach(el => {
+    el.addEventListener('click', () => dlg.close('cancel'), { signal: abort.signal });
+  });
+
+  btn.addEventListener('click', async () => {
     // gather
     const fd = new FormData(form);
     const entry = {
@@ -280,7 +285,7 @@ function openAddDialog(state, filter) {
       btn.disabled = false;
       btn.textContent = 'Guardar';
     }
-  };
+  }, { signal: abort.signal });
 }
 
 function exportJSON(state, board) {
@@ -397,7 +402,12 @@ function openBoardDialog(){
   };
   dlg.addEventListener('close', cleanup);
 
-  btn.onclick = async () => {
+  // Ensure close buttons always work.
+  dlg.querySelectorAll('[data-close]').forEach(el => {
+    el.addEventListener('click', () => dlg.close('cancel'), { signal: abort.signal });
+  });
+
+  btn.addEventListener('click', async () => {
     const fd = new FormData(form);
     const title = String(fd.get('title')||'').trim();
     if (!title){
@@ -435,7 +445,7 @@ function openBoardDialog(){
       btn.disabled = false;
       btn.textContent = 'Publicar';
     }
-  };
+  }, { signal: abort.signal });
 }
 
 async function refreshBoard(){
@@ -543,7 +553,12 @@ function openArtistDialog(){
   };
   dlg.addEventListener('close', cleanup);
 
-  btn.onclick = async () => {
+  // Ensure close buttons always work.
+  dlg.querySelectorAll('[data-close]').forEach(el => {
+    el.addEventListener('click', () => dlg.close('cancel'), { signal: abort.signal });
+  });
+
+  btn.addEventListener('click', async () => {
     const fd = new FormData(form);
     const name = String(fd.get('name')||'').trim();
     if (!name){
@@ -567,7 +582,7 @@ function openArtistDialog(){
       btn.disabled = false;
       btn.textContent = 'Guardar';
     }
-  };
+  }, { signal: abort.signal });
 }
 
 (async function main() {

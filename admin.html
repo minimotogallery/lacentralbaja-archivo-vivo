@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>La Central Baja — Admin</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    .admin-top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .admin-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .admin-actions .btn{letter-spacing:.08em}
+    .admin-grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media (max-width:900px){.admin-grid{grid-template-columns:1fr}}
+    .post{background:rgba(0,0,0,.10);border-radius:18px;overflow:hidden;box-shadow:0 16px 34px rgba(0,0,0,.18)}
+    .post .pimg{width:100%;height:auto;display:block}
+    .post .pbody{padding:14px}
+    .post h4{margin:0 0 8px 0}
+    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .small{font-size:12px;color:var(--muted)}
+    .danger{background:rgba(201,86,30,.15);border-color:rgba(201,86,30,.4)}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <a class="brand" href="/" aria-label="Inicio">
+      <img class="logo" src="./assets/capa-2.png" alt="La Central Baja" />
+    </a>
+    <nav class="actions" aria-label="Admin">
+      <a class="btn" href="/">Volver</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div class="admin-top">
+        <div>
+          <h2>Moderación — Tablón</h2>
+          <p class="muted">Las ideas del público quedan en <b>pendiente</b> y se publican cuando las apruebas.</p>
+        </div>
+        <div class="admin-actions">
+          <button class="btn" id="btnKey">Cambiar clave</button>
+          <button class="btn" id="btnReload">Recargar</button>
+        </div>
+      </div>
+
+      <div class="filters" style="margin-top:10px">
+        <div class="chips" id="statusChips"></div>
+        <div class="toggle small" id="meta"></div>
+      </div>
+
+      <div id="out" class="admin-grid" style="margin-top:14px"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    const $ = (sel) => document.querySelector(sel);
+
+    const STATUSES = [
+      { key: 'pending', label: 'pendientes' },
+      { key: 'approved', label: 'aprobados' },
+      { key: 'rejected', label: 'rechazados' }
+    ];
+
+    function getKey(){
+      try { return localStorage.getItem('ADMIN_KEY') || ''; } catch { return ''; }
+    }
+    function setKey(v){
+      try { localStorage.setItem('ADMIN_KEY', v); } catch {}
+    }
+    function ensureKey(){
+      let k = getKey();
+      if (k) return k;
+      k = (prompt('Clave admin:') || '').trim();
+      if (k) setKey(k);
+      return k;
+    }
+
+    async function api(path, opts={}){
+      const k = ensureKey();
+      if (!k) throw new Error('no_key');
+      const headers = { ...(opts.headers||{}), 'x-admin-key': k };
+      const res = await fetch(path, { ...opts, headers });
+      if (res.status === 401) throw new Error('unauthorized');
+      if (!res.ok) throw new Error('http_'+res.status);
+      return res.json();
+    }
+
+    function fmtDateTime(ms){
+      try { return new Intl.DateTimeFormat('es-ES', { dateStyle:'medium', timeStyle:'short' }).format(new Date(ms)); }
+      catch { return String(ms); }
+    }
+
+    let state = { status: 'pending' };
+
+    function renderChips(){
+      const wrap = $('#statusChips');
+      wrap.innerHTML = '';
+      for (const s of STATUSES){
+        const b = document.createElement('button');
+        b.className = 'chip';
+        b.type = 'button';
+        b.textContent = s.label;
+        b.setAttribute('aria-pressed', String(state.status === s.key));
+        b.addEventListener('click', ()=>{
+          state.status = s.key;
+          renderChips();
+          load();
+        });
+        wrap.appendChild(b);
+      }
+    }
+
+    async function load(){
+      $('#out').innerHTML = '<p class="muted">Cargando…</p>';
+      try {
+        const rows = await api(`/api/admin/board?status=${encodeURIComponent(state.status)}&limit=200`);
+        $('#meta').textContent = `${rows.length} ${state.status}`;
+        if (!rows.length){
+          $('#out').innerHTML = '<p class="muted">No hay elementos en esta bandeja.</p>';
+          return;
+        }
+
+        const out = $('#out');
+        out.innerHTML = '';
+        for (const r of rows){
+          const card = document.createElement('article');
+          card.className = 'post';
+
+          if (r.imageUrl){
+            const img = document.createElement('img');
+            img.className = 'pimg';
+            img.src = r.imageUrl;
+            img.alt = r.title || 'Imagen';
+            card.appendChild(img);
+          }
+
+          const body = document.createElement('div');
+          body.className = 'pbody';
+
+          const top = document.createElement('div');
+          top.className = 'row';
+          const t = document.createElement('div');
+          t.innerHTML = `<div class="small">${fmtDateTime(r.createdAt)} · ${r.author || 'Anónimo'}</div>`;
+          top.appendChild(t);
+
+          const actions = document.createElement('div');
+          actions.className = 'row';
+
+          if (state.status === 'pending'){
+            const a1 = document.createElement('button');
+            a1.className = 'btn primary';
+            a1.type = 'button';
+            a1.textContent = 'Aprobar';
+            a1.addEventListener('click', async ()=>{
+              a1.disabled = true;
+              try { await api(`/api/admin/board/${encodeURIComponent(r.id)}/approve`, { method:'POST' }); await load(); }
+              catch(e){ console.error(e); alert('No se pudo aprobar.'); }
+              finally { a1.disabled = false; }
+            });
+
+            const a2 = document.createElement('button');
+            a2.className = 'btn danger';
+            a2.type = 'button';
+            a2.textContent = 'Rechazar';
+            a2.addEventListener('click', async ()=>{
+              if (!confirm('¿Rechazar esta idea?')) return;
+              a2.disabled = true;
+              try { await api(`/api/admin/board/${encodeURIComponent(r.id)}/reject`, { method:'POST' }); await load(); }
+              catch(e){ console.error(e); alert('No se pudo rechazar.'); }
+              finally { a2.disabled = false; }
+            });
+
+            actions.appendChild(a1);
+            actions.appendChild(a2);
+          }
+
+          top.appendChild(actions);
+          body.appendChild(top);
+
+          const h = document.createElement('h4');
+          h.textContent = r.title || '(sin título)';
+          body.appendChild(h);
+
+          if (r.body){
+            const p = document.createElement('p');
+            p.className = 'muted';
+            p.style.whiteSpace = 'pre-wrap';
+            p.textContent = r.body;
+            body.appendChild(p);
+          }
+
+          if (r.tags && r.tags.length){
+            const tags = document.createElement('div');
+            tags.className = 'tags';
+            r.tags.forEach(x=>{
+              const s = document.createElement('span');
+              s.className='tag';
+              s.textContent = x;
+              tags.appendChild(s);
+            });
+            body.appendChild(tags);
+          }
+
+          card.appendChild(body);
+          out.appendChild(card);
+        }
+      } catch (e){
+        console.error(e);
+        if (String(e?.message||'') === 'unauthorized'){
+          alert('Clave incorrecta (401).');
+          setKey('');
+          return load();
+        }
+        if (String(e?.message||'') === 'no_key'){
+          $('#out').innerHTML = '<p class="muted">Introduce la clave para ver la moderación.</p>';
+          return;
+        }
+        $('#out').innerHTML = '<p class="muted">Error cargando. Revisa la clave y vuelve a intentar.</p>';
+      }
+    }
+
+    $('#btnKey').addEventListener('click', ()=>{
+      const k = (prompt('Nueva clave admin:') || '').trim();
+      if (k) setKey(k);
+      load();
+    });
+    $('#btnReload').addEventListener('click', load);
+
+    renderChips();
+    load();
+  </script>
+</body>
+</html>

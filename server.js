@@ -333,6 +333,9 @@ app.delete('/api/artists/:id', (req, res) => {
   res.json({ ok: true, deleted: info.changes });
 });
 
+// Admin UI
+app.get(['/admin', '/admin/'], (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+
 // SPA-ish fallback
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 

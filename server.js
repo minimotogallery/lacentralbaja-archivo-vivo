@@ -19,6 +19,12 @@ const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 const app = express();
 app.use(express.json({ limit: '200kb' }));
 
+// Helpful for verifying which code is deployed.
+app.use((req, res, next) => {
+  res.setHeader('x-archivo-vivo-version', process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || 'dev');
+  next();
+});
+
 // --- DB
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });

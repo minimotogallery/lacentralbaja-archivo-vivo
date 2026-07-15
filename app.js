@@ -1,729 +1,138 @@
-const LS_KEY = 'lacentralbaja-archivo-v1';
+const $ = (selector, scope = document) => scope.querySelector(selector);
+const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 
-const $ = (sel) => document.querySelector(sel);
-const fmtEUR = (n) => {
-  if (typeof n !== 'number' || Number.isNaN(n)) return '—';
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
-};
-const fmtDate = (iso) => {
-  try {
-    const d = new Date(iso + 'T00:00:00');
-    return new Intl.DateTimeFormat('es-ES', { year: 'numeric', month: 'short', day: '2-digit' }).format(d);
-  } catch {
-    return iso;
-  }
-};
-const uid = () => 'e-' + Math.random().toString(16).slice(2) + '-' + Date.now().toString(16);
-
-function normalizeTags(s) {
-  if (!s) return [];
-  return s
-    .split(',')
-    .map(t => t.trim())
-    .filter(Boolean)
-    .map(t => t.replace(/\s+/g, ' '));
-}
-
-function normalizeLinks(s) {
-  if (!s) return [];
-  return s
-    .split('\n')
-    .map(l => l.trim())
-    .filter(Boolean);
-}
-
-async function loadSeed() {
-  // Served by the backend so it can keep project stats (e.g., crowdfunding) up-to-date.
-  const res = await fetch('/api/seed', { cache: 'no-store' });
-  if (!res.ok) throw new Error('No se pudo cargar seed');
-  return res.json();
-}
-
-function loadState(seed) {
-  const raw = localStorage.getItem(LS_KEY);
-  if (!raw) return { ...seed, entries: [...seed.entries] };
-  try {
-    const st = JSON.parse(raw);
-    // merge: prefer local entries, but DO NOT override server project.goals (keeps crowdfunding bar updated)
-    const mergedProject = { ...seed.project, ...(st.project || {}) };
-    mergedProject.goals = seed.project?.goals || mergedProject.goals;
-
-    return {
-      project: mergedProject,
-      entries: Array.isArray(st.entries) ? st.entries : [...seed.entries]
-    };
-  } catch {
-    return { ...seed, entries: [...seed.entries] };
-  }
-}
-
-async function fetchBoard(limit = 60) {
-  const res = await fetch(`/api/board?limit=${encodeURIComponent(String(limit))}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('board_fetch_failed');
-  return res.json();
-}
-
-async function fetchArtists(limit = 60) {
-  const res = await fetch(`/api/artists?limit=${encodeURIComponent(String(limit))}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('artists_fetch_failed');
-  return res.json();
-}
-
-function saveState(state) {
-  localStorage.setItem(LS_KEY, JSON.stringify(state));
-}
-
-function renderProject(project) {
-  $('#projectTitle').textContent = project.title || 'Proyecto';
-  $('#projectTagline').textContent = project.tagline || '';
-  $('#projectMeta').textContent = [project.category, project.location].filter(Boolean).join(' · ');
-
-  const g = project?.links?.goteo;
-  const ig = project?.links?.instagram;
-  if (g) {
-    $('#projectLink').href = g;
-    $('#projectLink').textContent = 'Goteo';
-  }
-  if (ig) {
-    $('#igLink').href = ig;
-    $('#igLink').textContent = 'Instagram';
-  }
-
-  const goals = project.goals || {};
-  $('#minGoal').textContent = fmtEUR(goals.min);
-  $('#optGoal').textContent = fmtEUR(goals.opt);
-  $('#raised').textContent = fmtEUR(goals.raised);
-  $('#daysLeft').textContent = (typeof goals.daysLeft === 'number') ? `${goals.daysLeft} días` : '—';
-
-  const min = goals.min || 0;
-  const raised = goals.raised || 0;
-  const pct = min > 0 ? Math.max(0, Math.min(100, (raised / min) * 100)) : 0;
-  $('#barFill').style.width = `${pct}%`;
-  $('.bar').setAttribute('aria-valuenow', String(Math.round(pct)));
-
-  const desc = Array.isArray(project.description) ? project.description : [];
-  $('#projectDesc').innerHTML = desc.map(p => `<p>${escapeHtml(p)}</p>`).join('');
-
-  // button top
-  const btnG = $('#btnGoteo');
-  if (g) btnG.href = g;
-}
-
-function escapeHtml(s) {
-  return String(s)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
-
-const TYPES = [
-  { key: 'all', label: 'todo' },
-  { key: 'update', label: 'updates' },
-  { key: 'hito', label: 'hitos' },
-  { key: 'evento', label: 'eventos' },
-  { key: 'prensa', label: 'prensa' },
-  { key: 'finanzas', label: 'finanzas' },
-  { key: 'contenido', label: 'contenido' },
-  { key: 'aliados', label: 'aliados' }
+const fallbackArtists = [
+  { name: 'Aitana de Nit', role: 'Artista', bio: 'Práctica instalativa y material centrada en los vínculos entre cuerpo, espacio y ficción.', tags: ['instalación', 'escultura'] },
+  { name: 'MiniMoto Gallery', role: 'Dispositivo expositivo', bio: 'Galería site-specific y plataforma de mediación dentro de La Central Baja.', tags: ['exposición', 'mediación'] },
+  { name: 'Diego Lobenal', role: 'Artista y gestor cultural', bio: 'Investigación, performance, fotografía y construcción de infraestructuras culturales.', tags: ['performance', 'curaduría'] }
 ];
 
-function renderTypeChips(state, filter) {
-  const wrap = $('#typeChips');
-  wrap.innerHTML = '';
-  for (const t of TYPES) {
-    const b = document.createElement('button');
-    b.className = 'chip';
-    b.type = 'button';
-    b.textContent = t.label;
-    b.setAttribute('aria-pressed', String(filter.type === t.key));
-    b.addEventListener('click', () => {
-      filter.type = t.key;
-      for (const el of wrap.querySelectorAll('.chip')) el.setAttribute('aria-pressed', 'false');
-      b.setAttribute('aria-pressed', 'true');
-      renderTimeline(state, filter);
-    });
-    wrap.appendChild(b);
-  }
+const fallbackPosts = [
+  { title: 'La nave como proceso', body: 'Montajes, pruebas, reuniones y tiempos de trabajo que hacen visible la construcción cotidiana del espacio.', author: 'La Central Baja', tags: ['proceso'], createdAt: Date.now() },
+  { title: 'MiniMoto: activación 01', body: 'Un espacio expositivo mínimo que trabaja con la escala, la proximidad y la recepción de propuestas.', author: 'MiniMoto Gallery', tags: ['exposición'], createdAt: Date.now() - 86400000 * 4 },
+  { title: 'Puestos en uso', body: 'El espacio empieza a tomar forma a través de quienes lo trabajan y modifican diariamente.', author: 'La Central Baja', tags: ['espacio'], createdAt: Date.now() - 86400000 * 10 }
+];
+
+const state = { posts: [], query: '', tag: 'todo' };
+
+function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
+function excerpt(value, max = 260) { const text = clean(value); return text.length > max ? `${text.slice(0, max).trim()}…` : text; }
+function formatDate(value) { const d = new Date(Number(value) || value); return Number.isNaN(d.getTime()) ? 'Sin fecha' : new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d); }
+function safeUrl(value) { try { const u = new URL(String(value || ''), location.origin); return ['http:', 'https:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } }
+
+async function getJson(path) {
+  const response = await fetch(path, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+  if (!response.ok) throw new Error(String(response.status));
+  return response.json();
 }
 
-function entryMatches(e, filter) {
-  if (!filter.showArchived && e.archived) return false;
-  if (filter.type !== 'all' && e.type !== filter.type) return false;
-  const q = (filter.q || '').trim().toLowerCase();
-  if (!q) return true;
-
-  const hay = [e.title, e.body, (e.tags || []).join(' '), (e.links || []).join(' ')].join(' ').toLowerCase();
-  return hay.includes(q);
+function setupMenu() {
+  const button = $('.menu-button');
+  const nav = $('#site-nav');
+  if (!button || !nav) return;
+  button.addEventListener('click', () => {
+    const open = button.getAttribute('aria-expanded') !== 'true';
+    button.setAttribute('aria-expanded', String(open));
+    nav.classList.toggle('is-open', open);
+  });
+  $$('a', nav).forEach(link => link.addEventListener('click', () => { button.setAttribute('aria-expanded', 'false'); nav.classList.remove('is-open'); }));
 }
 
-function sortEntries(entries) {
-  return [...entries].sort((a,b) => {
-    const da = (a.date || '0000-00-00');
-    const db = (b.date || '0000-00-00');
-    if (da !== db) return db.localeCompare(da); // newest first
-    return (b.importance || '').localeCompare(a.importance || '');
+function setupTime() {
+  const clock = $('#local-time');
+  const year = $('#year');
+  if (year) year.textContent = String(new Date().getFullYear());
+  const update = () => { if (clock) clock.textContent = new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()); };
+  update(); setInterval(update, 30000);
+}
+
+function artistCard(artist, index) {
+  const article = document.createElement('article'); article.className = 'artist-card';
+  const media = document.createElement('div'); media.className = 'artist-media';
+  const number = document.createElement('span'); number.className = 'artist-number'; number.textContent = String(index + 1).padStart(2, '0'); media.append(number);
+  if (artist.imageUrl) { const img = document.createElement('img'); img.src = artist.imageUrl; img.alt = `Imagen de ${artist.name || 'artista'}`; img.loading = index < 2 ? 'eager' : 'lazy'; media.append(img); }
+  else { const placeholder = document.createElement('div'); placeholder.className = 'artist-placeholder'; placeholder.textContent = (artist.name || 'LCB').slice(0, 1); media.append(placeholder); }
+  const copy = document.createElement('div'); copy.className = 'artist-copy';
+  if (artist.role) { const role = document.createElement('span'); role.className = 'artist-role'; role.textContent = artist.role; copy.append(role); }
+  const h3 = document.createElement('h3'); const url = safeUrl(artist.link);
+  if (url) { const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noreferrer'; a.textContent = artist.name || 'Sin nombre'; h3.append(a); } else h3.textContent = artist.name || 'Sin nombre';
+  copy.append(h3);
+  if (artist.bio) { const p = document.createElement('p'); p.textContent = excerpt(artist.bio, 280); copy.append(p); }
+  const tags = Array.isArray(artist.tags) ? artist.tags.filter(Boolean).slice(0, 5) : [];
+  if (tags.length) { const list = document.createElement('div'); list.className = 'artist-tags'; tags.forEach(t => { const s = document.createElement('span'); s.textContent = t; list.append(s); }); copy.append(list); }
+  article.append(media, copy); return article;
+}
+
+function renderArtists(artists) {
+  const grid = $('#artists-grid'); if (!grid) return;
+  grid.replaceChildren(); grid.setAttribute('aria-busy', 'false');
+  (artists.length ? artists : fallbackArtists).slice(0, 8).forEach((artist, i) => grid.append(artistCard(artist, i)));
+}
+
+function renderLatest(posts) {
+  const post = posts[0]; if (!post) return;
+  $('#latest-post-tag').textContent = post.tags?.[0] || 'Archivo vivo';
+  $('#latest-post-date').textContent = formatDate(post.createdAt);
+  $('#latest-post-title').textContent = post.title || 'Entrada del archivo vivo';
+  $('#latest-post-body').textContent = post.body ? excerpt(post.body, 420) : `Publicado por ${post.author || 'Anónimo'}.`;
+  if (post.imageUrl) { const media = $('#latest-post-media'); const img = document.createElement('img'); img.src = post.imageUrl; img.alt = post.title ? `Imagen de “${post.title}”` : 'Imagen del archivo'; media.replaceChildren(img); }
+}
+
+function tagsFrom(posts) {
+  const count = new Map(); posts.forEach(p => (Array.isArray(p.tags) ? p.tags : []).forEach(t => { const v = clean(t); if (v) count.set(v, (count.get(v) || 0) + 1); }));
+  return [...count].sort((a,b) => b[1]-a[1]).slice(0,8).map(([tag]) => tag);
+}
+
+function renderFilters() {
+  const root = $('#archive-filters'); if (!root) return; root.replaceChildren();
+  ['todo', ...tagsFrom(state.posts)].forEach(tag => { const b = document.createElement('button'); b.type = 'button'; b.className = 'filter-button'; b.textContent = tag; b.setAttribute('aria-pressed', String(state.tag === tag)); b.addEventListener('click', () => { state.tag = tag; renderFilters(); renderArchive(); }); root.append(b); });
+}
+
+function archiveEntry(post) {
+  const article = document.createElement('article'); article.className = 'archive-entry'; article.setAttribute('role', 'listitem');
+  const time = document.createElement('time'); time.textContent = formatDate(post.createdAt);
+  const type = document.createElement('span'); type.className = 'archive-entry-type'; type.textContent = post.tags?.[0] || 'archivo';
+  const content = document.createElement('div');
+  const h3 = document.createElement('h3'); h3.textContent = post.title || 'Sin título'; content.append(h3);
+  if (post.body) { const p = document.createElement('p'); p.textContent = excerpt(post.body, 420); content.append(p); }
+  article.append(time, type, content);
+  if (post.imageUrl) { const img = document.createElement('img'); img.src = post.imageUrl; img.alt = ''; img.loading = 'lazy'; article.append(img); }
+  return article;
+}
+
+function renderArchive() {
+  const root = $('#archive-list'); if (!root) return; root.replaceChildren();
+  const q = state.query.toLocaleLowerCase('es');
+  const filtered = state.posts.filter(post => {
+    const matchesTag = state.tag === 'todo' || (post.tags || []).some(t => clean(t).toLocaleLowerCase('es') === state.tag.toLocaleLowerCase('es'));
+    const haystack = [post.title, post.body, post.author, ...(post.tags || [])].map(clean).join(' ').toLocaleLowerCase('es');
+    return matchesTag && (!q || haystack.includes(q));
+  });
+  if (!filtered.length) { const p = document.createElement('p'); p.className = 'archive-empty'; p.textContent = 'No hay entradas que coincidan con la búsqueda.'; root.append(p); return; }
+  filtered.forEach(post => root.append(archiveEntry(post)));
+}
+
+function setupSearch() { const input = $('#archive-search'); if (input) input.addEventListener('input', () => { state.query = input.value.trim(); renderArchive(); }); }
+
+function setupForm() {
+  const form = $('#contribution-form'); const status = $('#form-status'); if (!form) return;
+  form.addEventListener('submit', async event => {
+    event.preventDefault(); const button = $('button[type="submit"]', form); button.disabled = true; status.textContent = 'Enviando…';
+    try { const response = await fetch('/api/board', { method: 'POST', body: new FormData(form) }); if (!response.ok) throw new Error(String(response.status)); form.reset(); status.textContent = 'Entrada enviada. Se publicará después de revisión.'; }
+    catch { status.textContent = 'No se ha podido enviar. Escríbenos a lacentralbaja@gmail.com.'; }
+    finally { button.disabled = false; }
   });
 }
 
-function renderTimeline(state, filter) {
-  const root = $('#timeline');
-  root.innerHTML = '';
-
-  const entries = sortEntries(state.entries).filter(e => entryMatches(e, filter));
-  if (!entries.length) {
-    const p = document.createElement('p');
-    p.className = 'muted';
-    p.textContent = 'No hay entradas con esos filtros. Añade un hito o cambia la búsqueda.';
-    root.appendChild(p);
-    return;
-  }
-
-  for (const e of entries) {
-    const node = $('#tplItem').content.cloneNode(true);
-    node.querySelector('.date').textContent = fmtDate(e.date);
-    node.querySelector('.type').textContent = e.type || '—';
-    const badge = node.querySelector('.badge');
-    if (e.archived) {
-      badge.hidden = false;
-      badge.textContent = 'archivado';
-    }
-
-    node.querySelector('.title').textContent = e.title || '(sin título)';
-    node.querySelector('.body').textContent = e.body || '';
-
-    const tags = node.querySelector('.tags');
-    (e.tags || []).forEach(t => {
-      const s = document.createElement('span');
-      s.className = 'tag';
-      s.textContent = t;
-      tags.appendChild(s);
-    });
-
-    const links = node.querySelector('.links');
-    (e.links || []).forEach(u => {
-      const a = document.createElement('a');
-      a.href = u;
-      a.target = '_blank';
-      a.rel = 'noreferrer';
-      a.textContent = u;
-      links.appendChild(a);
-    });
-
-    const btnArchive = node.querySelector('[data-act="archive"]');
-    btnArchive.textContent = e.archived ? 'Desarchivar' : 'Archivar';
-    btnArchive.addEventListener('click', () => {
-      e.archived = !e.archived;
-      saveState(state);
-      renderTimeline(state, filter);
-    });
-
-    const btnDelete = node.querySelector('[data-act="delete"]');
-    btnDelete.addEventListener('click', () => {
-      if (!confirm('¿Eliminar esta entrada? (No se puede deshacer salvo que hayas exportado JSON)')) return;
-      state.entries = state.entries.filter(x => x.id !== e.id);
-      saveState(state);
-      renderTimeline(state, filter);
-    });
-
-    root.appendChild(node);
-  }
+async function init() {
+  setupMenu(); setupTime(); setupSearch(); setupForm();
+  const [artistsResult, postsResult] = await Promise.allSettled([getJson('/api/artists'), getJson('/api/board')]);
+  const artistsRaw = artistsResult.status === 'fulfilled' ? artistsResult.value : fallbackArtists;
+  const postsRaw = postsResult.status === 'fulfilled' ? postsResult.value : fallbackPosts;
+  const artists = Array.isArray(artistsRaw) ? artistsRaw : (artistsRaw.artists || fallbackArtists);
+  const posts = Array.isArray(postsRaw) ? postsRaw : (postsRaw.posts || postsRaw.items || fallbackPosts);
+  state.posts = posts.filter(p => p && p.approved !== false).sort((a,b) => (Number(b.createdAt)||0) - (Number(a.createdAt)||0));
+  renderArtists(artists); renderLatest(state.posts); renderFilters(); renderArchive();
 }
 
-function openAddDialog(state, filter) {
-  const dlg = $('#dlg');
-  const form = dlg.querySelector('form');
-  form.reset();
-  form.elements.date.valueAsDate = new Date();
-  dlg.showModal();
-
-  const btn = $('#btnSave');
-  const abort = new AbortController();
-
-  const cleanup = () => {
-    try { abort.abort('dialog_closed'); } catch {}
-    dlg.removeEventListener('close', cleanup);
-  };
-  dlg.addEventListener('close', cleanup);
-
-  // Ensure close buttons always work (even after file picker cancel, etc.)
-  dlg.querySelectorAll('[data-close]').forEach(el => {
-    el.addEventListener('click', () => dlg.close('cancel'), { signal: abort.signal });
-  });
-
-  btn.addEventListener('click', async () => {
-    // gather
-    const fd = new FormData(form);
-    const entry = {
-      id: uid(),
-      date: String(fd.get('date') || ''),
-      type: String(fd.get('type') || 'update'),
-      title: String(fd.get('title') || '').trim(),
-      body: String(fd.get('body') || '').trim(),
-      tags: normalizeTags(String(fd.get('tags') || '')),
-      links: normalizeLinks(String(fd.get('links') || '')),
-      archived: String(fd.get('archived') || 'false') === 'true',
-      importance: String(fd.get('importance') || 'normal')
-    };
-
-    if (!entry.date || !entry.title) {
-      alert('Fecha y título son obligatorios.');
-      return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'Guardando…';
-
-    try {
-      if (abort.signal.aborted) return;
-      state.entries.push(entry);
-      saveState(state);
-      renderTimeline(state, filter);
-      dlg.close();
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Guardar';
-    }
-  }, { signal: abort.signal });
-}
-
-function exportJSON(state, board) {
-  const payload = { ...state, board: board || [] };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'lacentralbaja-archivo.json';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
-
-async function importJSON(file, seed) {
-  const txt = await file.text();
-  const st = JSON.parse(txt);
-  const merged = {
-    project: { ...seed.project, ...(st.project || {}) },
-    entries: Array.isArray(st.entries) ? st.entries : [...seed.entries]
-  };
-  localStorage.setItem(LS_KEY, JSON.stringify(merged));
-  if (Array.isArray(st.board)) {
-    localStorage.setItem(LS_BOARD_KEY, JSON.stringify(st.board));
-  }
-  return merged;
-}
-
-function renderBoard(items){
-  const root = $('#board');
-  if (!root) return;
-  root.innerHTML = '';
-
-  if (!items.length){
-    const p = document.createElement('p');
-    p.className = 'muted';
-    p.textContent = 'Aún no hay publicaciones. Sé la primera persona en imaginar La Central Baja.';
-    root.appendChild(p);
-    return;
-  }
-
-  for (const it of items){
-    const card = document.createElement('div');
-    card.className = 'board-item';
-
-    if (it.imageUrl){
-      const img = document.createElement('img');
-      img.src = it.imageUrl;
-      img.alt = it.title || 'Imagen';
-      card.appendChild(img);
-    }
-
-    const bi = document.createElement('div');
-    bi.className = 'bi';
-    const h = document.createElement('h4');
-    h.textContent = it.title || '(sin título)';
-    const p = document.createElement('p');
-    p.textContent = it.body || '';
-    bi.appendChild(h);
-    bi.appendChild(p);
-
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    if (it.author){
-      const who = document.createElement('span');
-      who.className = 'who';
-      who.textContent = it.author;
-      meta.appendChild(who);
-    }
-    (it.tags||[]).forEach(t=>{
-      const tg = document.createElement('span');
-      tg.className = 'tag';
-      tg.textContent = t;
-      meta.appendChild(tg);
-    });
-    bi.appendChild(meta);
-
-    card.appendChild(bi);
-    root.appendChild(card);
-  }
-}
-
-function isAdminPath(){
-  return String(location.pathname || '').startsWith('/admin');
-}
-
-function getAdminKey(){
-  try { return localStorage.getItem('ADMIN_KEY') || ''; } catch { return ''; }
-}
-
-function setAdminKey(v){
-  try { localStorage.setItem('ADMIN_KEY', v); } catch {}
-}
-
-function ensureAdminKey(){
-  let key = getAdminKey();
-  if (key) return key;
-  key = prompt('Clave admin:') || '';
-  key = key.trim();
-  if (key) setAdminKey(key);
-  return key;
-}
-
-function openBoardDialog(){
-  const dlg = $('#dlgBoard');
-  const form = dlg.querySelector('form');
-  form.reset();
-  dlg.showModal();
-
-  const btn = $('#btnSaveBoard');
-  const abort = new AbortController();
-
-  const cleanup = () => {
-    try { abort.abort('dialog_closed'); } catch {}
-    dlg.removeEventListener('close', cleanup);
-  };
-  dlg.addEventListener('close', cleanup);
-
-  // Ensure close buttons always work.
-  dlg.querySelectorAll('[data-close]').forEach(el => {
-    el.addEventListener('click', () => dlg.close('cancel'), { signal: abort.signal });
-  });
-
-  btn.addEventListener('click', async () => {
-    const fd = new FormData(form);
-    const title = String(fd.get('title')||'').trim();
-    if (!title){
-      alert('Título obligatorio.');
-      return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = isAdminPath() ? 'Publicando…' : 'Enviando…';
-
-    try {
-      const headers = {};
-      let url = '/api/board/submit';
-
-      if (isAdminPath()){
-        const key = ensureAdminKey();
-        if (!key) throw new Error('admin_key_required');
-        headers['x-admin-key'] = key;
-        url = '/api/board';
-      }
-
-      const res = await fetch(url, { method: 'POST', body: fd, signal: abort.signal, headers });
-      if (!res.ok) throw new Error('post_failed');
-
-      dlg.close();
-      if (!isAdminPath()){
-        alert('Gracias. Tu idea se ha enviado y queda pendiente de revisión.');
-      }
-      await refreshBoard();
-    } catch (e) {
-      if (e?.name === 'AbortError') return; // cancelado
-      console.error(e);
-      alert(isAdminPath() ? 'No se pudo publicar.' : 'No se pudo enviar. Intenta de nuevo.');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Publicar';
-    }
-  }, { signal: abort.signal });
-}
-
-async function refreshBoard(){
-  try {
-    const items = await fetchBoard(90);
-    renderBoard(items);
-  } catch (e) {
-    console.error(e);
-    const root = $('#board');
-    if (root){
-      root.innerHTML = '<p class="muted">No se pudo cargar el tablón ahora mismo.</p>';
-    }
-  }
-}
-
-function renderArtists(items){
-  const root = $('#artists');
-  if (!root) return;
-  root.innerHTML = '';
-  if (!items.length){
-    const p = document.createElement('p');
-    p.className = 'muted';
-    p.textContent = 'Todavía no hay artistas listados.';
-    root.appendChild(p);
-    return;
-  }
-  for (const it of items){
-    const card = document.createElement('div');
-    card.className = 'board-item';
-
-    if (it.imageUrl){
-      const img = document.createElement('img');
-      img.src = it.imageUrl;
-      img.alt = it.name || 'Artista';
-      card.appendChild(img);
-    }
-
-    const bi = document.createElement('div');
-    bi.className = 'bi';
-    const h = document.createElement('h4');
-    h.textContent = it.name || '(sin nombre)';
-    const p = document.createElement('p');
-    p.textContent = it.bio || '';
-    bi.appendChild(h);
-    bi.appendChild(p);
-
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    if (it.role){
-      const who = document.createElement('span');
-      who.className = 'who';
-      who.textContent = it.role;
-      meta.appendChild(who);
-    }
-    (it.tags||[]).forEach(t=>{
-      const tg = document.createElement('span');
-      tg.className = 'tag';
-      tg.textContent = t;
-      meta.appendChild(tg);
-    });
-    bi.appendChild(meta);
-
-    if (it.link){
-      const links = document.createElement('div');
-      links.className = 'links';
-      const a = document.createElement('a');
-      a.href = it.link;
-      a.target = '_blank';
-      a.rel = 'noreferrer';
-      a.textContent = it.link;
-      links.appendChild(a);
-      bi.appendChild(links);
-    }
-
-    card.appendChild(bi);
-    root.appendChild(card);
-  }
-}
-
-async function refreshArtists(){
-  try {
-    const items = await fetchArtists(120);
-    renderArtists(items);
-  } catch (e) {
-    console.error(e);
-    const root = $('#artists');
-    if (root){
-      root.innerHTML = '<p class="muted">No se pudo cargar artistas ahora mismo.</p>';
-    }
-  }
-}
-
-function openArtistDialog(){
-  const dlg = $('#dlgArtist');
-  const form = dlg.querySelector('form');
-  form.reset();
-  dlg.showModal();
-
-  const btn = $('#btnSaveArtist');
-  const abort = new AbortController();
-
-  const cleanup = () => {
-    try { abort.abort('dialog_closed'); } catch {}
-    dlg.removeEventListener('close', cleanup);
-  };
-  dlg.addEventListener('close', cleanup);
-
-  // Ensure close buttons always work.
-  dlg.querySelectorAll('[data-close]').forEach(el => {
-    el.addEventListener('click', () => dlg.close('cancel'), { signal: abort.signal });
-  });
-
-  btn.addEventListener('click', async () => {
-    const fd = new FormData(form);
-    const name = String(fd.get('name')||'').trim();
-    if (!name){
-      alert('Nombre obligatorio.');
-      return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'Guardando…';
-
-    try {
-      const res = await fetch('/api/artists', { method: 'POST', body: fd, signal: abort.signal });
-      if (!res.ok) throw new Error('artist_post_failed');
-      dlg.close();
-      await refreshArtists();
-    } catch (e) {
-      if (e?.name === 'AbortError') return;
-      console.error(e);
-      alert('No se pudo guardar.');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Guardar';
-    }
-  }, { signal: abort.signal });
-}
-
-(async function main() {
-  const seed = await loadSeed();
-  let state = loadState(seed);
-
-  const filter = { q: '', type: 'all', showArchived: false };
-
-  renderProject(state.project);
-  renderTypeChips(state, filter);
-  renderTimeline(state, filter);
-  const isAdmin = isAdminPath();
-
-  // Public vs admin controls
-  const btnAdd = document.getElementById('btnAdd');
-  const btnAddArtist = document.getElementById('btnAddArtist');
-  const btnAddBoard = document.getElementById('btnAddBoard');
-  if (!isAdmin) {
-    if (btnAdd) btnAdd.style.display = 'none';
-    if (btnAddArtist) btnAddArtist.style.display = 'none';
-    if (btnAddBoard) btnAddBoard.textContent = 'Enviar idea';
-  }
-
-  await refreshBoard();
-  await refreshArtists();
-
-  // tabs
-  const panels = Array.from(document.querySelectorAll('[data-tabpanel]'));
-  const showTab = (key) => {
-    panels.forEach(p => p.hidden = (p.getAttribute('data-tabpanel') !== key));
-    document.querySelectorAll('[data-tab]').forEach(a => {
-      a.setAttribute('aria-current', a.getAttribute('data-tab') === key ? 'page' : 'false');
-    });
-  };
-  showTab('board');
-  document.querySelectorAll('[data-tab]').forEach(a => {
-    a.addEventListener('click', (ev) => {
-      ev.preventDefault();
-      showTab(a.getAttribute('data-tab'));
-      // close mobile menu
-      const links = document.getElementById('navLinks');
-      const btn = document.getElementById('btnMenu');
-      links?.classList.remove('open');
-      if (btn) btn.setAttribute('aria-expanded', 'false');
-    });
-  });
-
-  // mobile menu
-  const btnMenu = document.getElementById('btnMenu');
-  const navLinks = document.getElementById('navLinks');
-  btnMenu?.addEventListener('click', () => {
-    const isOpen = navLinks?.classList.toggle('open');
-    btnMenu.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-  });
-  document.addEventListener('click', (e) => {
-    if (!navLinks || !btnMenu) return;
-    if (navLinks.contains(e.target) || btnMenu.contains(e.target)) return;
-    navLinks.classList.remove('open');
-    btnMenu.setAttribute('aria-expanded', 'false');
-  });
-
-  $('#btnAdd').addEventListener('click', () => openAddDialog(state, filter));
-  $('#btnAddBoard')?.addEventListener('click', () => openBoardDialog());
-  $('#btnAddArtist')?.addEventListener('click', () => openArtistDialog());
-
-  // cursor estrella (velocidad -> giro)
-  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const star = document.getElementById('cursorStar');
-  if (!reduce && star) {
-    document.body.classList.add('custom-cursor');
-    let x = 0, y = 0, tx = 0, ty = 0;
-    let lastX = 0, lastY = 0, lastT = performance.now();
-    let rot = 0;
-    let visible = false;
-
-    const onMove = (ev) => {
-      tx = ev.clientX;
-      ty = ev.clientY;
-      if (!visible) {
-        visible = true;
-        star.style.opacity = '1';
-      }
-    };
-
-    window.addEventListener('mousemove', onMove, { passive: true });
-    window.addEventListener('mouseout', () => { star.style.opacity = '0'; visible = false; }, { passive: true });
-
-    const tick = () => {
-      // smooth follow
-      x += (tx - x) * 0.22;
-      y += (ty - y) * 0.22;
-
-      const t = performance.now();
-      const dt = Math.max(16, t - lastT);
-      const vx = (x - lastX) / dt;
-      const vy = (y - lastY) / dt;
-      const speed = Math.min(2.5, Math.hypot(vx, vy) * 60);
-
-      // rotate more when moving fast
-      rot += speed * 12;
-
-      star.style.transform = `translate(${x}px, ${y}px) translate(-50%,-50%) rotate(${rot}deg) scale(${1 + Math.min(.25, speed/10)})`;
-
-      lastX = x; lastY = y; lastT = t;
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-
-    // click punch
-    window.addEventListener('mousedown', () => {
-      star.animate([
-        { transform: star.style.transform },
-        { transform: star.style.transform.replace(/scale\([^\)]*\)/, 'scale(1.35)') }
-      ], { duration: 140, easing: 'cubic-bezier(.2,.9,.2,1)', iterations: 1 });
-    }, { passive: true });
-  }
-
-  $('#btnExport').addEventListener('click', () => exportJSON(state, []));
-
-  $('#fileImport').addEventListener('change', async (ev) => {
-    const f = ev.target.files?.[0];
-    if (!f) return;
-    try {
-      state = await importJSON(f, seed);
-      renderProject(state.project);
-      renderTimeline(state, filter);
-      await refreshBoard();
-      alert('Importado OK.');
-    } catch (e) {
-      console.error(e);
-      alert('No se pudo importar el JSON.');
-    }
-  });
-
-  $('#q').addEventListener('input', (ev) => {
-    filter.q = ev.target.value || '';
-    renderTimeline(state, filter);
-  });
-
-  $('#showArchived').addEventListener('change', (ev) => {
-    filter.showArchived = !!ev.target.checked;
-    renderTimeline(state, filter);
-  });
-})();
+document.addEventListener('DOMContentLoaded', init);

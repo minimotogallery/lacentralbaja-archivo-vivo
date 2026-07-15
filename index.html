@@ -3,309 +3,200 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>La Central Baja — Archivo vivo</title>
+  <meta name="description" content="La Central Baja es una infraestructura cultural independiente en Murcia para producir, investigar, ensayar y mostrar prácticas contemporáneas." />
+  <meta name="theme-color" content="#e8edf2" />
+  <meta property="og:title" content="La Central Baja — Murcia" />
+  <meta property="og:description" content="605 m² para sostener prácticas contemporáneas." />
+  <meta property="og:image" content="/assets/logo-central-baja.png" />
+  <title>La Central Baja — Infraestructura cultural independiente</title>
+  <link rel="icon" href="./assets/favicon.png" type="image/png" />
   <link rel="stylesheet" href="./style.css" />
+  <script src="./app.js" defer></script>
 </head>
 <body>
-  <header class="wrap">
-    <a class="brand" href="#" data-tab="board" aria-label="Inicio">
-      <img class="logo" src="./assets/capa-2.png" alt="La Central Baja" />
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+
+  <header class="site-header">
+    <a class="brand" href="#inicio" aria-label="La Central Baja, inicio">
+      <img src="./assets/logo-central-baja.png" alt="" width="29" height="36" />
+      <span>La Central Baja</span>
     </a>
 
-    <nav class="actions" aria-label="Navegación">
-      <button class="btn menu" id="btnMenu" aria-expanded="false" aria-controls="navLinks">Menu</button>
-      <div class="navlinks" id="navLinks">
-        <a class="btn" data-tab="board" href="#">Tablón</a>
-        <a class="btn" data-tab="artists" href="#">Artistas</a>
-        <a class="btn" data-tab="updates" href="#">Updates</a>
-        <a class="btn" id="btnGoteo" href="https://www.goteo.org/project/espacio-lanzadera-la-central-baja-en-murcia" target="_blank" rel="noreferrer">Goteo</a>
-        <button class="btn" id="btnAdd">Añadir hito</button>
-        <!-- Export/Import oculto para visitantes (se puede reactivar cuando haga falta) -->
-      </div>
+    <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav">Menú</button>
+
+    <nav id="site-nav" class="site-nav" aria-label="Navegación principal">
+      <a href="#ahora">Ahora</a>
+      <a href="#practicas">Prácticas</a>
+      <a href="#espacio">Espacio</a>
+      <a href="#archivo">Archivo</a>
+      <a href="#contacto">Contacto</a>
     </nav>
   </header>
 
-  <div id="cursorStar" class="cursor-star" aria-hidden="true"></div>
-
-  <main class="wrap">
-    <section class="card tab" id="boardCard" data-tabpanel="board">
-      <div class="board-head">
-        <div>
-          <h2>Tablón de imaginarios</h2>
-          <p class="muted">Sube texto e imágenes: cómo te imaginas La Central Baja. Ideas, deseos, necesidades, referencias.</p>
-        </div>
-        <div class="board-cta">
-          <button class="btn" id="btnAddBoard">Publicar</button>
+  <main id="main">
+    <section class="hero" id="inicio">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span> Infraestructura cultural independiente · Murcia</p>
+        <h1>Un lugar donde una práctica puede quedarse el tiempo suficiente.</h1>
+        <p class="hero-intro">La Central Baja es una nave de 605 m² para producir, investigar, ensayar, reunirse y mostrar trabajo contemporáneo sin convertir cada proceso en un evento inmediato.</p>
+        <div class="hero-links">
+          <a class="action action-primary" href="#ahora">Ver qué está pasando</a>
+          <a class="action" href="mailto:lacentralbaja@gmail.com?subject=Visitar%20La%20Central%20Baja">Visitar / proponer</a>
         </div>
       </div>
 
-      <div class="masonry" id="board"></div>
-
-      <details class="subtle">
-        <summary>Crowdfunding (info)</summary>
-        <div class="subtle-body">
-          <p class="muted">Si quieres apoyar la apertura del espacio:</p>
-          <p><a class="pill" href="https://www.goteo.org/project/espacio-lanzadera-la-central-baja-en-murcia" target="_blank" rel="noreferrer">Ir a Goteo</a></p>
+      <div class="hero-mark" aria-label="Símbolo de La Central Baja">
+        <img src="./assets/logo-central-baja.png" alt="Símbolo de La Central Baja" width="790" height="958" />
+        <div class="hero-meta">
+          <span>LCB / 001</span>
+          <span>San Pío X</span>
+          <span id="local-time">--:--</span>
         </div>
+      </div>
+    </section>
+
+    <div class="ticker" aria-label="Ámbitos de trabajo">
+      <div class="ticker-track">
+        <span>ARTES VISUALES</span><i>↗</i><span>PERFORMANCE</span><i>↗</i><span>AUDIOVISUAL</span><i>↗</i><span>PRÁCTICAS DIGITALES</span><i>↗</i><span>CURADURÍA</span><i>↗</i><span>MEDIACIÓN</span><i>↗</i>
+        <span aria-hidden="true">ARTES VISUALES</span><i aria-hidden="true">↗</i><span aria-hidden="true">PERFORMANCE</span><i aria-hidden="true">↗</i><span aria-hidden="true">AUDIOVISUAL</span><i aria-hidden="true">↗</i><span aria-hidden="true">PRÁCTICAS DIGITALES</span><i aria-hidden="true">↗</i><span aria-hidden="true">CURADURÍA</span><i aria-hidden="true">↗</i><span aria-hidden="true">MEDIACIÓN</span><i aria-hidden="true">↗</i>
+      </div>
+    </div>
+
+    <section class="section" id="ahora">
+      <header class="section-header">
+        <p class="section-index">01 — Ahora</p>
+        <div>
+          <h2>La actividad antes que la explicación.</h2>
+          <p>Procesos, pruebas, montajes, encuentros y documentos todavía abiertos.</p>
+        </div>
+      </header>
+
+      <div class="current-grid">
+        <article class="feature-card" id="latest-post">
+          <div class="feature-media" id="latest-post-media">
+            <div class="fallback-grid" aria-hidden="true"><span>archivo vivo</span></div>
+          </div>
+          <div class="feature-copy">
+            <div class="meta-row"><span id="latest-post-tag">Proceso</span><time id="latest-post-date">Ahora</time></div>
+            <h3 id="latest-post-title">Conectando con el archivo vivo.</h3>
+            <p id="latest-post-body">La publicación más reciente aparecerá aquí automáticamente.</p>
+          </div>
+        </article>
+
+        <div class="program-list">
+          <article class="program-card">
+            <p class="card-index">A / 01</p>
+            <h3>Puestos de trabajo</h3>
+            <p>Módulos para artistas y colectivos con acceso continuado a recursos, contexto profesional y zonas compartidas.</p>
+            <a href="mailto:lacentralbaja@gmail.com?subject=Puestos%20de%20trabajo">Consultar disponibilidad ↗</a>
+          </article>
+          <article class="program-card">
+            <p class="card-index">A / 02</p>
+            <h3>Sala polivalente</h3>
+            <p>Montaje, ensayo, formación, exhibición, escucha, reunión y experimentación.</p>
+          </article>
+          <article class="program-card accent-card">
+            <p class="card-index">A / 03</p>
+            <h3>MiniMoto Gallery</h3>
+            <p>Un dispositivo expositivo propio para proyectos site-specific y procesos de mediación.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section dark-section" id="practicas">
+      <header class="section-header">
+        <p class="section-index">02 — Prácticas</p>
+        <div>
+          <h2>El espacio se reconoce a través de quienes lo ocupan.</h2>
+          <p>Artistas, colectivos y agentes que producen desde La Central Baja.</p>
+        </div>
+      </header>
+      <div class="artists-grid" id="artists-grid" aria-live="polite" aria-busy="true">
+        <p class="loading">Cargando prácticas…</p>
+      </div>
+    </section>
+
+    <section class="statement">
+      <p class="section-index">03 — Posición</p>
+      <h2>No buscamos llenar una agenda. Buscamos que una práctica pueda permanecer el tiempo suficiente para cambiar.</h2>
+      <div class="statement-notes">
+        <p>La Central Baja nace de una carencia concreta: faltan lugares intermedios donde el trabajo artístico pueda probar, fallar, producir y adquirir continuidad antes de convertirse en evento.</p>
+        <p>La programación pública es una consecuencia del proceso, no una decoración de la infraestructura.</p>
+      </div>
+    </section>
+
+    <section class="section" id="espacio">
+      <header class="section-header">
+        <p class="section-index">04 — Espacio</p>
+        <div>
+          <h2>605 m², varios ritmos de uso.</h2>
+          <p>Una arquitectura que cambia según el proceso y no obliga a que todo suceda de la misma manera.</p>
+        </div>
+      </header>
+
+      <div class="space-layout">
+        <div class="plan" aria-label="Diagrama conceptual de los usos de La Central Baja">
+          <div class="plan-zone z1"><span>Producción</span><small>trabajo continuado</small></div>
+          <div class="plan-zone z2"><span>Polivalente</span><small>ensayo · montaje · público</small></div>
+          <div class="plan-zone z3"><span>MiniMoto</span><small>exposición</small></div>
+          <div class="plan-zone z4"><span>Común</span><small>encuentro · cocina</small></div>
+        </div>
+        <dl class="facts">
+          <div><dt>Superficie</dt><dd>605 m²</dd></div>
+          <div><dt>Ubicación</dt><dd>San Pío X, Murcia</dd></div>
+          <div><dt>Uso</dt><dd>Producción, investigación, exposición y encuentro</dd></div>
+          <div><dt>Contacto</dt><dd><a href="mailto:lacentralbaja@gmail.com">lacentralbaja@gmail.com</a></dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="section archive-section" id="archivo">
+      <header class="section-header archive-head">
+        <p class="section-index">05 — Archivo vivo</p>
+        <div>
+          <h2>Un archivo que aún está ocurriendo.</h2>
+          <p>Documentos, imágenes, notas y rastros generados desde el espacio.</p>
+        </div>
+      </header>
+
+      <div class="archive-tools">
+        <label>
+          <span>Buscar</span>
+          <input id="archive-search" type="search" placeholder="título, texto, autor…" autocomplete="off" />
+        </label>
+        <div id="archive-filters" class="filters" aria-label="Filtrar archivo"></div>
+      </div>
+
+      <div id="archive-list" class="archive-list" role="list" aria-live="polite"></div>
+
+      <details class="contribute">
+        <summary>Añadir una entrada al archivo <span>+</span></summary>
+        <form id="contribution-form" enctype="multipart/form-data">
+          <div class="form-grid">
+            <label><span>Título</span><input name="title" required /></label>
+            <label><span>Autoría</span><input name="author" /></label>
+            <label class="wide"><span>Texto</span><textarea name="body" rows="5" required></textarea></label>
+            <label><span>Etiquetas</span><input name="tags" placeholder="proceso, montaje, encuentro" /></label>
+            <label><span>Imagen</span><input name="image" type="file" accept="image/*" /></label>
+          </div>
+          <div class="form-foot">
+            <p>Las aportaciones se revisan antes de publicarse.</p>
+            <button type="submit">Enviar para revisión</button>
+          </div>
+          <p id="form-status" class="form-status" aria-live="polite"></p>
+        </form>
       </details>
-    </section>
-
-    <section class="card tab" id="artistsCard" data-tabpanel="artists">
-      <div class="project-top">
-        <div>
-          <h2>Artistas trabajando en La Central Baja</h2>
-          <p class="muted">Un archivo vivo de quién está produciendo, investigando o ensayando en el espacio.</p>
-        </div>
-        <div class="project-links">
-          <button class="btn" id="btnAddArtist">Añadir artista</button>
-        </div>
-      </div>
-
-      <div class="masonry" id="artists"></div>
-    </section>
-
-    <section class="card" id="projectCard">
-      <div class="project-top">
-        <div>
-          <h2 id="projectTitle">Proyecto</h2>
-          <p id="projectTagline" class="muted"></p>
-          <p class="muted" id="projectMeta"></p>
-        </div>
-        <div class="project-links">
-          <a class="pill" id="projectLink" target="_blank" rel="noreferrer">Goteo</a>
-          <a class="pill" id="igLink" target="_blank" rel="noreferrer">Instagram</a>
-        </div>
-      </div>
-
-      <div class="progress">
-        <div class="progress-row">
-          <div>
-            <div class="k">Mínimo</div>
-            <div class="v" id="minGoal">—</div>
-          </div>
-          <div>
-            <div class="k">Óptimo</div>
-            <div class="v" id="optGoal">—</div>
-          </div>
-          <div>
-            <div class="k">Obtenido</div>
-            <div class="v" id="raised">—</div>
-          </div>
-          <div>
-            <div class="k">Quedan</div>
-            <div class="v" id="daysLeft">—</div>
-          </div>
-        </div>
-        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <div class="fill" id="barFill"></div>
-        </div>
-      </div>
-
-      <details>
-        <summary>Descripción base</summary>
-        <div class="desc" id="projectDesc"></div>
-      </details>
-    </section>
-
-    <section class="card tab" data-tabpanel="updates">
-      <div class="filters">
-        <div class="search">
-          <input id="q" type="search" placeholder="Buscar por título, texto o tags…" />
-        </div>
-        <div class="chips" id="typeChips"></div>
-        <div class="toggle">
-          <label><input type="checkbox" id="showArchived" /> Mostrar archivados</label>
-        </div>
-      </div>
-
-      <div class="timeline" id="timeline"></div>
     </section>
   </main>
 
-  <dialog id="dlgBoard">
-    <form method="dialog" class="dlg">
-      <div class="dlg-head">
-        <h3>Publicar en el tablón</h3>
-        <button class="x" type="button" data-close aria-label="Cerrar">×</button>
-      </div>
-
-      <div class="grid">
-        <label class="col2">
-          Título
-          <input name="title" type="text" required placeholder="Ej: Un patio de pruebas / Un laboratorio de sonido" />
-        </label>
-
-        <label class="col2">
-          Tu texto
-          <textarea name="body" rows="5" placeholder="Cómo te imaginas La Central Baja, deseos, ideas, necesidades…"></textarea>
-        </label>
-
-        <label class="col2">
-          Imagen (opcional)
-          <input name="image" type="file" accept="image/*" />
-        </label>
-
-        <label>
-          Nombre (opcional)
-          <input name="author" type="text" placeholder="Anónimo" />
-        </label>
-
-        <label>
-          Tags (opcional)
-          <input name="tags" type="text" placeholder="talleres, barrio, música" />
-        </label>
-      </div>
-
-      <div class="dlg-actions">
-        <button class="btn" type="button" data-close>Cancelar</button>
-        <button class="btn primary" type="button" id="btnSaveBoard">Publicar</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="dlgArtist">
-    <form method="dialog" class="dlg">
-      <div class="dlg-head">
-        <h3>Añadir artista</h3>
-        <button class="x" type="button" data-close aria-label="Cerrar">×</button>
-      </div>
-
-      <div class="grid">
-        <label class="col2">
-          Nombre / proyecto
-          <input name="name" type="text" required placeholder="Nombre artístico / colectivo" />
-        </label>
-
-        <label class="col2">
-          Bio / en qué está trabajando
-          <textarea name="bio" rows="4" placeholder="Qué está haciendo en La Central Baja…"></textarea>
-        </label>
-
-        <label>
-          Rol (opcional)
-          <input name="role" type="text" placeholder="artes visuales, música, performance…" />
-        </label>
-
-        <label>
-          Enlace (opcional)
-          <input name="link" type="url" placeholder="https://instagram.com/..." />
-        </label>
-
-        <label class="col2">
-          Imagen (opcional)
-          <input name="image" type="file" accept="image/*" />
-        </label>
-
-        <label class="col2">
-          Tags (opcional)
-          <input name="tags" type="text" placeholder="residencia, ensayo, exposición" />
-        </label>
-      </div>
-
-      <div class="dlg-actions">
-        <button class="btn" type="button" data-close>Cancelar</button>
-        <button class="btn primary" type="button" id="btnSaveArtist">Guardar</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="dlg">
-    <form method="dialog" class="dlg">
-      <div class="dlg-head">
-        <h3>Añadir hito / update</h3>
-        <button class="x" type="button" data-close aria-label="Cerrar">×</button>
-      </div>
-
-      <div class="grid">
-        <label>
-          Fecha
-          <input name="date" type="date" required />
-        </label>
-        <label>
-          Tipo
-          <select name="type">
-            <option value="update">update</option>
-            <option value="hito">hito</option>
-            <option value="evento">evento</option>
-            <option value="prensa">prensa</option>
-            <option value="finanzas">finanzas</option>
-            <option value="contenido">contenido</option>
-            <option value="aliados">aliados</option>
-          </select>
-        </label>
-
-        <label class="col2">
-          Título
-          <input name="title" type="text" required placeholder="Ej: 1er post publicado / 340€ en 1h" />
-        </label>
-
-        <label class="col2">
-          Texto
-          <textarea name="body" rows="5" placeholder="Qué pasó, por qué importa, próximos pasos…"></textarea>
-        </label>
-
-        <label class="col2">
-          Tags (separados por comas)
-          <input name="tags" type="text" placeholder="Ej: goteo, instagram, san pío x" />
-        </label>
-
-        <label class="col2">
-          Links (uno por línea)
-          <textarea name="links" rows="3" placeholder="https://…"></textarea>
-        </label>
-
-        <label>
-          Archivado
-          <select name="archived">
-            <option value="false">no</option>
-            <option value="true">sí</option>
-          </select>
-        </label>
-
-        <label>
-          Importancia
-          <select name="importance">
-            <option value="normal">normal</option>
-            <option value="alto">alto</option>
-            <option value="bajo">bajo</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="dlg-actions">
-        <button class="btn" type="button" data-close>Cancelar</button>
-        <button class="btn primary" type="button" id="btnSave">Guardar</button>
-      </div>
-    </form>
-  </dialog>
-
-  <template id="tplItem">
-    <article class="item">
-      <div class="dot"></div>
-      <div class="content">
-        <div class="topline">
-          <div class="meta">
-            <span class="date"></span>
-            <span class="type"></span>
-            <span class="badge" hidden></span>
-          </div>
-          <div class="item-actions">
-            <button class="linkbtn" data-act="archive"></button>
-            <button class="linkbtn" data-act="delete">Eliminar</button>
-          </div>
-        </div>
-        <h4 class="title"></h4>
-        <p class="body"></p>
-        <div class="tags"></div>
-        <div class="links"></div>
-      </div>
-    </article>
-  </template>
-
-  <footer class="wrap foot">
-    <p class="muted">La Central Baja — Murcia · San Pío X</p>
+  <footer id="contacto" class="site-footer">
+    <div class="footer-title">La Central Baja</div>
+    <div class="footer-grid">
+      <div><span>Localización</span><p>Polígono San Pío X<br />Murcia, España</p></div>
+      <div><span>Contacto</span><p><a href="mailto:lacentralbaja@gmail.com">lacentralbaja@gmail.com</a><br /><a href="https://www.instagram.com/lacentralbaja/" target="_blank" rel="noreferrer">Instagram ↗</a></p></div>
+      <div><span>Sistema</span><p>Archivo vivo / <span id="year"></span><br /><a href="/admin">Gestión privada</a></p></div>
+    </div>
   </footer>
-
-  <script src="./app.js" type="module"></script>
 </body>
 </html>

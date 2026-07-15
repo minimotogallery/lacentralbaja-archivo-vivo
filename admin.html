@@ -3,231 +3,101 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>La Central Baja — Admin</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#f0eee7" />
+  <title>Gestión — La Central Baja</title>
+  <link rel="icon" href="./assets/favicon.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./style.css" />
-  <style>
-    .admin-top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .admin-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .admin-actions .btn{letter-spacing:.08em}
-    .admin-grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
-    @media (max-width:900px){.admin-grid{grid-template-columns:1fr}}
-    .post{background:rgba(0,0,0,.10);border-radius:18px;overflow:hidden;box-shadow:0 16px 34px rgba(0,0,0,.18)}
-    .post .pimg{width:100%;height:auto;display:block}
-    .post .pbody{padding:14px}
-    .post h4{margin:0 0 8px 0}
-    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .small{font-size:12px;color:var(--muted)}
-    .danger{background:rgba(201,86,30,.15);border-color:rgba(201,86,30,.4)}
-  </style>
+  <script src="./admin.js" defer></script>
 </head>
-<body>
-  <header class="wrap">
-    <a class="brand" href="/" aria-label="Inicio">
-      <img class="logo" src="./assets/capa-2.png" alt="La Central Baja" />
+<body class="admin-page">
+  <a class="skip-link" href="#admin-main">Saltar a gestión</a>
+
+  <header class="site-header admin-header">
+    <a class="brand" href="/" aria-label="Volver a La Central Baja">
+      <img src="./assets/logo-central-baja.png" alt="" width="39" height="46" />
+      <span class="brand-name">La Central Baja</span>
+      <span class="brand-place">Gestión privada</span>
     </a>
-    <nav class="actions" aria-label="Admin">
-      <a class="btn" href="/">Volver</a>
-    </nav>
+    <a class="button button-outline admin-back" href="/">Ver web pública ↗</a>
   </header>
 
-  <main class="wrap">
-    <section class="card">
-      <div class="admin-top">
+  <main class="admin-shell" id="admin-main">
+    <section class="admin-intro" aria-labelledby="admin-title">
+      <p class="section-code">ÁREA PRIVADA / 01</p>
+      <h1 id="admin-title">Gestión del archivo vivo.</h1>
+      <p>Modera aportaciones y gestiona los perfiles que aparecen en la web pública. La clave se conserva únicamente en este navegador.</p>
+    </section>
+
+    <section class="admin-key-panel" aria-labelledby="key-title">
+      <div>
+        <h2 id="key-title">Clave de administración</h2>
+        <p id="keyStatus" role="status">No se ha comprobado la clave.</p>
+      </div>
+      <form id="keyForm" class="admin-key-form">
+        <label>
+          <span>Clave</span>
+          <input id="adminKey" type="password" autocomplete="current-password" required />
+        </label>
+        <button class="button button-solid" type="submit">Guardar y comprobar</button>
+      </form>
+    </section>
+
+    <div class="admin-tabs" role="tablist" aria-label="Secciones de gestión">
+      <button class="admin-tab" id="tabBoard" type="button" role="tab" aria-selected="true" aria-controls="panelBoard">Moderación</button>
+      <button class="admin-tab" id="tabArtists" type="button" role="tab" aria-selected="false" aria-controls="panelArtists">Artistas</button>
+    </div>
+
+    <section class="admin-panel" id="panelBoard" role="tabpanel" aria-labelledby="tabBoard">
+      <header class="admin-panel-head">
         <div>
-          <h2>Moderación — Tablón</h2>
-          <p class="muted">Las ideas del público quedan en <b>pendiente</b> y se publican cuando las apruebas.</p>
+          <p class="section-code">TABLÓN / MODERACIÓN</p>
+          <h2>Aportaciones del público</h2>
         </div>
-        <div class="admin-actions">
-          <button class="btn" id="btnKey">Cambiar clave</button>
-          <button class="btn" id="btnReload">Recargar</button>
-        </div>
+        <button class="button button-outline" id="reloadBoard" type="button">Recargar</button>
+      </header>
+
+      <div class="admin-status-filters" id="boardStatusFilters" role="group" aria-label="Estado de las aportaciones">
+        <button type="button" data-status="pending" aria-pressed="true">Pendientes</button>
+        <button type="button" data-status="approved" aria-pressed="false">Publicadas</button>
+        <button type="button" data-status="rejected" aria-pressed="false">Rechazadas</button>
       </div>
 
-      <div class="filters" style="margin-top:10px">
-        <div class="chips" id="statusChips"></div>
-        <div class="toggle small" id="meta"></div>
-      </div>
+      <p class="admin-live" id="boardLive" role="status" aria-live="polite"></p>
+      <div class="admin-card-grid" id="boardAdminList" aria-live="polite"></div>
+    </section>
 
-      <div id="out" class="admin-grid" style="margin-top:14px"></div>
+    <section class="admin-panel is-hidden" id="panelArtists" role="tabpanel" aria-labelledby="tabArtists">
+      <header class="admin-panel-head">
+        <div>
+          <p class="section-code">ECOSISTEMA / PERFILES</p>
+          <h2>Artistas y prácticas</h2>
+        </div>
+        <button class="button button-outline" id="reloadArtists" type="button">Recargar</button>
+      </header>
+
+      <form class="admin-artist-form" id="artistForm" enctype="multipart/form-data">
+        <h3>Añadir perfil</h3>
+        <div class="admin-form-grid">
+          <label><span>Nombre / proyecto *</span><input name="name" type="text" maxlength="120" required /></label>
+          <label><span>Rol</span><input name="role" type="text" maxlength="120" placeholder="Artista, colectivo, investigación…" /></label>
+          <label class="admin-span-2"><span>Bio / proceso</span><textarea name="bio" rows="5" maxlength="2500"></textarea></label>
+          <label><span>Enlace</span><input name="link" type="url" maxlength="500" placeholder="https://…" /></label>
+          <label><span>Etiquetas</span><input name="tags" type="text" maxlength="200" placeholder="performance, audiovisual" /></label>
+          <label class="admin-span-2"><span>Imagen</span><input name="image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" /></label>
+        </div>
+        <div class="form-actions">
+          <p class="form-status" id="artistFormStatus" role="status" aria-live="polite"></p>
+          <button class="button button-solid" type="submit">Publicar perfil</button>
+        </div>
+      </form>
+
+      <p class="admin-live" id="artistsLive" role="status" aria-live="polite"></p>
+      <div class="admin-card-grid admin-artist-grid" id="artistsAdminList" aria-live="polite"></div>
     </section>
   </main>
-
-  <script type="module">
-    const $ = (sel) => document.querySelector(sel);
-
-    const STATUSES = [
-      { key: 'pending', label: 'pendientes' },
-      { key: 'approved', label: 'aprobados' },
-      { key: 'rejected', label: 'rechazados' }
-    ];
-
-    function getKey(){
-      try { return localStorage.getItem('ADMIN_KEY') || ''; } catch { return ''; }
-    }
-    function setKey(v){
-      try { localStorage.setItem('ADMIN_KEY', v); } catch {}
-    }
-    function ensureKey(){
-      let k = getKey();
-      if (k) return k;
-      k = (prompt('Clave admin:') || '').trim();
-      if (k) setKey(k);
-      return k;
-    }
-
-    async function api(path, opts={}){
-      const k = ensureKey();
-      if (!k) throw new Error('no_key');
-      const headers = { ...(opts.headers||{}), 'x-admin-key': k };
-      const res = await fetch(path, { ...opts, headers });
-      if (res.status === 401) throw new Error('unauthorized');
-      if (!res.ok) throw new Error('http_'+res.status);
-      return res.json();
-    }
-
-    function fmtDateTime(ms){
-      try { return new Intl.DateTimeFormat('es-ES', { dateStyle:'medium', timeStyle:'short' }).format(new Date(ms)); }
-      catch { return String(ms); }
-    }
-
-    let state = { status: 'pending' };
-
-    function renderChips(){
-      const wrap = $('#statusChips');
-      wrap.innerHTML = '';
-      for (const s of STATUSES){
-        const b = document.createElement('button');
-        b.className = 'chip';
-        b.type = 'button';
-        b.textContent = s.label;
-        b.setAttribute('aria-pressed', String(state.status === s.key));
-        b.addEventListener('click', ()=>{
-          state.status = s.key;
-          renderChips();
-          load();
-        });
-        wrap.appendChild(b);
-      }
-    }
-
-    async function load(){
-      $('#out').innerHTML = '<p class="muted">Cargando…</p>';
-      try {
-        const rows = await api(`/api/admin/board?status=${encodeURIComponent(state.status)}&limit=200`);
-        $('#meta').textContent = `${rows.length} ${state.status}`;
-        if (!rows.length){
-          $('#out').innerHTML = '<p class="muted">No hay elementos en esta bandeja.</p>';
-          return;
-        }
-
-        const out = $('#out');
-        out.innerHTML = '';
-        for (const r of rows){
-          const card = document.createElement('article');
-          card.className = 'post';
-
-          if (r.imageUrl){
-            const img = document.createElement('img');
-            img.className = 'pimg';
-            img.src = r.imageUrl;
-            img.alt = r.title || 'Imagen';
-            card.appendChild(img);
-          }
-
-          const body = document.createElement('div');
-          body.className = 'pbody';
-
-          const top = document.createElement('div');
-          top.className = 'row';
-          const t = document.createElement('div');
-          t.innerHTML = `<div class="small">${fmtDateTime(r.createdAt)} · ${r.author || 'Anónimo'}</div>`;
-          top.appendChild(t);
-
-          const actions = document.createElement('div');
-          actions.className = 'row';
-
-          if (state.status === 'pending'){
-            const a1 = document.createElement('button');
-            a1.className = 'btn primary';
-            a1.type = 'button';
-            a1.textContent = 'Aprobar';
-            a1.addEventListener('click', async ()=>{
-              a1.disabled = true;
-              try { await api(`/api/admin/board/${encodeURIComponent(r.id)}/approve`, { method:'POST' }); await load(); }
-              catch(e){ console.error(e); alert('No se pudo aprobar.'); }
-              finally { a1.disabled = false; }
-            });
-
-            const a2 = document.createElement('button');
-            a2.className = 'btn danger';
-            a2.type = 'button';
-            a2.textContent = 'Rechazar';
-            a2.addEventListener('click', async ()=>{
-              if (!confirm('¿Rechazar esta idea?')) return;
-              a2.disabled = true;
-              try { await api(`/api/admin/board/${encodeURIComponent(r.id)}/reject`, { method:'POST' }); await load(); }
-              catch(e){ console.error(e); alert('No se pudo rechazar.'); }
-              finally { a2.disabled = false; }
-            });
-
-            actions.appendChild(a1);
-            actions.appendChild(a2);
-          }
-
-          top.appendChild(actions);
-          body.appendChild(top);
-
-          const h = document.createElement('h4');
-          h.textContent = r.title || '(sin título)';
-          body.appendChild(h);
-
-          if (r.body){
-            const p = document.createElement('p');
-            p.className = 'muted';
-            p.style.whiteSpace = 'pre-wrap';
-            p.textContent = r.body;
-            body.appendChild(p);
-          }
-
-          if (r.tags && r.tags.length){
-            const tags = document.createElement('div');
-            tags.className = 'tags';
-            r.tags.forEach(x=>{
-              const s = document.createElement('span');
-              s.className='tag';
-              s.textContent = x;
-              tags.appendChild(s);
-            });
-            body.appendChild(tags);
-          }
-
-          card.appendChild(body);
-          out.appendChild(card);
-        }
-      } catch (e){
-        console.error(e);
-        if (String(e?.message||'') === 'unauthorized'){
-          alert('Clave incorrecta (401).');
-          setKey('');
-          return load();
-        }
-        if (String(e?.message||'') === 'no_key'){
-          $('#out').innerHTML = '<p class="muted">Introduce la clave para ver la moderación.</p>';
-          return;
-        }
-        $('#out').innerHTML = '<p class="muted">Error cargando. Revisa la clave y vuelve a intentar.</p>';
-      }
-    }
-
-    $('#btnKey').addEventListener('click', ()=>{
-      const k = (prompt('Nueva clave admin:') || '').trim();
-      if (k) setKey(k);
-      load();
-    });
-    $('#btnReload').addEventListener('click', load);
-
-    renderChips();
-    load();
-  </script>
 </body>
 </html>

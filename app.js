@@ -118,7 +118,7 @@ function setupForm() {
   const form = $('#contribution-form'); const status = $('#form-status'); if (!form) return;
   form.addEventListener('submit', async event => {
     event.preventDefault(); const button = $('button[type="submit"]', form); button.disabled = true; status.textContent = 'Enviando…';
-    try { const response = await fetch('/api/board', { method: 'POST', body: new FormData(form) }); if (!response.ok) throw new Error(String(response.status)); form.reset(); status.textContent = 'Entrada enviada. Se publicará después de revisión.'; }
+    try { const response = await fetch('/api/board/submit', { method: 'POST', body: new FormData(form) }); if (!response.ok) throw new Error(String(response.status)); form.reset(); status.textContent = 'Entrada enviada. Se publicará después de revisión.'; }
     catch { status.textContent = 'No se ha podido enviar. Escríbenos a lacentralbaja@gmail.com.'; }
     finally { button.disabled = false; }
   });

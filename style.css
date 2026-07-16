@@ -245,3 +245,9 @@ button, input, textarea { font: inherit; }
   .ticker-track { animation: none; }
   * { transition-duration: .01ms !important; }
 }
+.feature-copy p,
+.artist-copy p,
+.archive-entry p {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}

@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 5173;
-const ADMIN_KEY = process.env.ADMIN_KEY || '';
+const ADMIN_KEY = (process.env.ADMIN_KEY || '').trim();
 
 // For production (Render disk): set DATA_DIR + UPLOADS_DIR to a persistent mount.
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');

@@ -57,7 +57,7 @@ function artistCard(artist, index) {
   const h3 = document.createElement('h3'); const url = safeUrl(artist.link);
   if (url) { const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noreferrer'; a.textContent = artist.name || 'Sin nombre'; h3.append(a); } else h3.textContent = artist.name || 'Sin nombre';
   copy.append(h3);
-  if (artist.bio) { const p = document.createElement('p'); p.textContent = excerpt(artist.bio, 280); copy.append(p); }
+  if (artist.bio) { const p = document.createElement('p'); p.textContent = artist.bio; copy.append(p); }
   const tags = Array.isArray(artist.tags) ? artist.tags.filter(Boolean).slice(0, 5) : [];
   if (tags.length) { const list = document.createElement('div'); list.className = 'artist-tags'; tags.forEach(t => { const s = document.createElement('span'); s.textContent = t; list.append(s); }); copy.append(list); }
   article.append(media, copy); return article;
@@ -74,7 +74,7 @@ function renderLatest(posts) {
   $('#latest-post-tag').textContent = post.tags?.[0] || 'Archivo vivo';
   $('#latest-post-date').textContent = formatDate(post.createdAt);
   $('#latest-post-title').textContent = post.title || 'Entrada del archivo vivo';
-  $('#latest-post-body').textContent = post.body ? excerpt(post.body, 420) : `Publicado por ${post.author || 'Anónimo'}.`;
+  $('#latest-post-body').textContent = post.body || `Publicado por ${post.author || 'Anónimo'}.`;
   if (post.imageUrl) { const media = $('#latest-post-media'); const img = document.createElement('img'); img.src = post.imageUrl; img.alt = post.title ? `Imagen de “${post.title}”` : 'Imagen del archivo'; media.replaceChildren(img); }
 }
 
@@ -94,7 +94,7 @@ function archiveEntry(post) {
   const type = document.createElement('span'); type.className = 'archive-entry-type'; type.textContent = post.tags?.[0] || 'archivo';
   const content = document.createElement('div');
   const h3 = document.createElement('h3'); h3.textContent = post.title || 'Sin título'; content.append(h3);
-  if (post.body) { const p = document.createElement('p'); p.textContent = excerpt(post.body, 420); content.append(p); }
+  if (post.body) { const p = document.createElement('p'); p.textContent = post.body; content.append(p); }
   article.append(time, type, content);
   if (post.imageUrl) { const img = document.createElement('img'); img.src = post.imageUrl; img.alt = ''; img.loading = 'lazy'; article.append(img); }
   return article;

@@ -14,7 +14,21 @@ const fallbackPosts = [
 ];
 
 const state = { posts: [], query: '', tag: 'todo' };
+const MINIMOTO_URL = 'https://minimotogallery.github.io/minimoto-gallery/';
 
+function isMiniMoto(item = {}) {
+  const values = [
+    item.name,
+    item.title,
+    item.author,
+    item.role,
+    ...(Array.isArray(item.tags) ? item.tags : [])
+  ];
+
+  return values.some(value =>
+    clean(value).toLocaleLowerCase('es').includes('minimoto')
+  );
+}
 function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
 function excerpt(value, max = 260) { const text = clean(value); return text.length > max ? `${text.slice(0, max).trim()}…` : text; }
 function formatDate(value) { const d = new Date(Number(value) || value); return Number.isNaN(d.getTime()) ? 'Sin fecha' : new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d); }
@@ -47,14 +61,17 @@ function setupTime() {
 }
 
 function artistCard(artist, index) {
-  const article = document.createElement('article'); article.className = 'artist-card';
+  const article = document.createElement('article');
+article.className = 'artist-card';
+if (isMiniMoto(artist)) article.classList.add('is-minimoto');
   const media = document.createElement('div'); media.className = 'artist-media';
   const number = document.createElement('span'); number.className = 'artist-number'; number.textContent = String(index + 1).padStart(2, '0'); media.append(number);
   if (artist.imageUrl) { const img = document.createElement('img'); img.src = artist.imageUrl; img.alt = `Imagen de ${artist.name || 'artista'}`; img.loading = index < 2 ? 'eager' : 'lazy'; media.append(img); }
   else { const placeholder = document.createElement('div'); placeholder.className = 'artist-placeholder'; placeholder.textContent = (artist.name || 'LCB').slice(0, 1); media.append(placeholder); }
   const copy = document.createElement('div'); copy.className = 'artist-copy';
   if (artist.role) { const role = document.createElement('span'); role.className = 'artist-role'; role.textContent = artist.role; copy.append(role); }
-  const h3 = document.createElement('h3'); const url = safeUrl(artist.link);
+  const h3 = document.createElement('h3');
+const url = safeUrl(artist.link) || (isMiniMoto(artist) ? MINIMOTO_URL : '');
   if (url) { const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noreferrer'; a.textContent = artist.name || 'Sin nombre'; h3.append(a); } else h3.textContent = artist.name || 'Sin nombre';
   copy.append(h3);
   if (artist.bio) { const p = document.createElement('p'); p.textContent = artist.bio; copy.append(p); }
@@ -70,12 +87,42 @@ function renderArtists(artists) {
 }
 
 function renderLatest(posts) {
-  const post = posts[0]; if (!post) return;
+  const post = posts[0];
+  if (!post) return;
+
+  const minimoto = isMiniMoto(post);
+  const feature = $('#latest-post');
+  if (feature) feature.classList.toggle('is-minimoto', minimoto);
+
   $('#latest-post-tag').textContent = post.tags?.[0] || 'Archivo vivo';
   $('#latest-post-date').textContent = formatDate(post.createdAt);
-  $('#latest-post-title').textContent = post.title || 'Entrada del archivo vivo';
-  $('#latest-post-body').textContent = post.body || `Publicado por ${post.author || 'Anónimo'}.`;
-  if (post.imageUrl) { const media = $('#latest-post-media'); const img = document.createElement('img'); img.src = post.imageUrl; img.alt = post.title ? `Imagen de “${post.title}”` : 'Imagen del archivo'; media.replaceChildren(img); }
+
+  const title = $('#latest-post-title');
+  title.replaceChildren();
+
+  if (minimoto) {
+    const link = document.createElement('a');
+    link.href = MINIMOTO_URL;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = post.title || 'Entrada de MiniMoto Gallery';
+    title.append(link);
+  } else {
+    title.textContent = post.title || 'Entrada del archivo vivo';
+  }
+
+  $('#latest-post-body').textContent =
+    post.body || `Publicado por ${post.author || 'Anónimo'}.`;
+
+  if (post.imageUrl) {
+    const media = $('#latest-post-media');
+    const img = document.createElement('img');
+    img.src = post.imageUrl;
+    img.alt = post.title
+      ? `Imagen de “${post.title}”`
+      : 'Imagen del archivo';
+    media.replaceChildren(img);
+  }
 }
 
 function tagsFrom(posts) {
@@ -89,14 +136,55 @@ function renderFilters() {
 }
 
 function archiveEntry(post) {
-  const article = document.createElement('article'); article.className = 'archive-entry'; article.setAttribute('role', 'listitem');
-  const time = document.createElement('time'); time.textContent = formatDate(post.createdAt);
-  const type = document.createElement('span'); type.className = 'archive-entry-type'; type.textContent = post.tags?.[0] || 'archivo';
+  const minimoto = isMiniMoto(post);
+
+  const article = document.createElement('article');
+  article.className = 'archive-entry';
+  article.setAttribute('role', 'listitem');
+
+  if (minimoto) article.classList.add('is-minimoto');
+
+  const time = document.createElement('time');
+  time.textContent = formatDate(post.createdAt);
+
+  const type = document.createElement('span');
+  type.className = 'archive-entry-type';
+  type.textContent = post.tags?.[0] || 'archivo';
+
   const content = document.createElement('div');
-  const h3 = document.createElement('h3'); h3.textContent = post.title || 'Sin título'; content.append(h3);
-  if (post.body) { const p = document.createElement('p'); p.textContent = post.body; content.append(p); }
+  const h3 = document.createElement('h3');
+
+  if (minimoto) {
+    const link = document.createElement('a');
+    link.href = MINIMOTO_URL;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = post.title || 'MiniMoto Gallery';
+    h3.append(link);
+  } else {
+    h3.textContent = post.title || 'Sin título';
+  }
+
+  content.append(h3);
+
+  if (post.body) {
+    const p = document.createElement('p');
+    p.textContent = post.body;
+    content.append(p);
+  }
+
   article.append(time, type, content);
-  if (post.imageUrl) { const img = document.createElement('img'); img.src = post.imageUrl; img.alt = ''; img.loading = 'lazy'; article.append(img); }
+
+  if (post.imageUrl) {
+    const img = document.createElement('img');
+    img.src = post.imageUrl;
+    img.alt = post.title
+      ? `Imagen de “${post.title}”`
+      : '';
+    img.loading = 'lazy';
+    article.append(img);
+  }
+
   return article;
 }
 

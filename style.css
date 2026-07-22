@@ -336,6 +336,41 @@ button, input, textarea { font: inherit; }
   background: var(--ink);
   color: white;
 }
+/* Publicaciones de la Sala polivalente */
+.feature-card.is-polyvalent .feature-copy {
+  background: var(--orange);
+  color: var(--ink);
+}
+
+.feature-card.is-polyvalent .meta-row,
+.feature-card.is-polyvalent .feature-copy p {
+  color: rgba(11, 12, 14, .72);
+}
+
+.feature-card.is-polyvalent .feature-copy h3 {
+  color: var(--ink);
+}
+
+.archive-entry.is-polyvalent {
+  padding: 18px;
+  background: var(--orange);
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+.archive-entry.is-polyvalent time,
+.archive-entry.is-polyvalent .archive-entry-type,
+.archive-entry.is-polyvalent p {
+  color: rgba(11, 12, 14, .72);
+}
+
+.archive-entry.is-polyvalent h3 {
+  color: var(--ink);
+}
+
+.archive-entry.is-polyvalent img {
+  border: 1px solid rgba(11, 12, 14, .45);
+}
 @media (max-width: 980px) {
   .hero { grid-template-columns: 1fr; min-height: auto; }
   .hero-copy { min-height: 68vh; }

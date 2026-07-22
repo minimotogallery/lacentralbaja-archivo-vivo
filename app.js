@@ -29,6 +29,20 @@ function isMiniMoto(item = {}) {
     clean(value).toLocaleLowerCase('es').includes('minimoto')
   );
 }
+
+function isPolyvalent(item = {}) {
+  const values = [
+    item.name,
+    item.title,
+    item.author,
+    item.role,
+    ...(Array.isArray(item.tags) ? item.tags : [])
+  ];
+
+  return values.some(value =>
+    clean(value).toLocaleLowerCase('es').includes('polivalente')
+  );
+}
 function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
 function excerpt(value, max = 260) { const text = clean(value); return text.length > max ? `${text.slice(0, max).trim()}…` : text; }
 function formatDate(value) { const d = new Date(Number(value) || value); return Number.isNaN(d.getTime()) ? 'Sin fecha' : new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d); }
@@ -91,8 +105,12 @@ function renderLatest(posts) {
   if (!post) return;
 
   const minimoto = isMiniMoto(post);
+  const polyvalent = !minimoto && isPolyvalent(post);
   const feature = $('#latest-post');
-  if (feature) feature.classList.toggle('is-minimoto', minimoto);
+  if (feature) {
+  feature.classList.toggle('is-minimoto', minimoto);
+  feature.classList.toggle('is-polyvalent', polyvalent);
+}
 
   $('#latest-post-tag').textContent = post.tags?.[0] || 'Archivo vivo';
   $('#latest-post-date').textContent = formatDate(post.createdAt);
@@ -137,12 +155,13 @@ function renderFilters() {
 
 function archiveEntry(post) {
   const minimoto = isMiniMoto(post);
-
+const polyvalent = !minimoto && isPolyvalent(post);
   const article = document.createElement('article');
   article.className = 'archive-entry';
   article.setAttribute('role', 'listitem');
 
   if (minimoto) article.classList.add('is-minimoto');
+if (polyvalent) article.classList.add('is-polyvalent');
 
   const time = document.createElement('time');
   time.textContent = formatDate(post.createdAt);

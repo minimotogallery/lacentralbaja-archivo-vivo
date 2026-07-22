@@ -294,6 +294,48 @@ button, input, textarea { font: inherit; }
 .archive-entry.is-minimoto img {
   border: 1px solid rgba(255, 255, 255, .45);
 }
+/* Sala polivalente — identidad antióxido */
+.polyvalent-card {
+  background: var(--orange);
+  color: var(--ink);
+}
+
+.polyvalent-card p:not(.card-index) {
+  color: rgba(11, 12, 14, .72);
+}
+
+.polyvalent-card:hover,
+.polyvalent-card:focus-visible {
+  background: var(--ink);
+  color: white;
+}
+
+.polyvalent-card:hover p:not(.card-index),
+.polyvalent-card:focus-visible p:not(.card-index) {
+  color: rgba(255, 255, 255, .78);
+}
+
+.plan-zone.z2,
+.polyvalent-zone {
+  background: var(--orange);
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.plan-zone.z2:hover,
+.plan-zone.z2:focus-visible,
+.polyvalent-zone:hover,
+.polyvalent-zone:focus-visible {
+  background: var(--ink);
+  color: white;
+}
+
+/* Zona común — base negra */
+.plan-zone.z4 {
+  background: var(--ink);
+  color: white;
+}
 @media (max-width: 980px) {
   .hero { grid-template-columns: 1fr; min-height: auto; }
   .hero-copy { min-height: 68vh; }

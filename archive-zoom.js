@@ -1,20 +1,16 @@
 (() => {
-  const archiveRoot = document.querySelector('#archive-list');
-  const latest = document.querySelector('#latest-post');
+  const root = document.querySelector('#archive-list');
+  if (!root) return;
 
-  if (!archiveRoot && !latest) return;
-
-  const MAX_ARCHIVE_SUMMARY = 300;
-  const MAX_FEATURE_SUMMARY = 430;
+  const MAX_SUMMARY = 300;
   const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
 
-  function excerpt(value, max) {
+  function excerpt(value) {
     const text = clean(value);
-    if (text.length <= max) return text;
-
-    const cut = text.slice(0, max);
+    if (text.length <= MAX_SUMMARY) return text;
+    const cut = text.slice(0, MAX_SUMMARY);
     const lastSpace = cut.lastIndexOf(' ');
-    return `${cut.slice(0, lastSpace > max * .72 ? lastSpace : max).trim()}…`;
+    return `${cut.slice(0, lastSpace > 220 ? lastSpace : MAX_SUMMARY).trim()}…`;
   }
 
   const dialog = document.createElement('dialog');
@@ -67,50 +63,6 @@
 
   let closeTimer = 0;
   let lastTrigger = null;
-  let writingLatestSummary = false;
-
-  function setIdentity(element, feature = false) {
-    dialog.classList.toggle(
-      'is-minimoto',
-      element?.classList.contains('is-minimoto')
-    );
-    dialog.classList.toggle(
-      'is-polyvalent',
-      element?.classList.contains('is-polyvalent')
-    );
-    dialog.classList.toggle('is-feature', feature);
-  }
-
-  function setImage(source, heading) {
-    if (source?.src) {
-      image.src = source.src;
-      image.alt = source.alt || `Imagen de ${heading}`;
-      figure.hidden = false;
-      dialog.classList.add('has-image');
-      return;
-    }
-
-    image.removeAttribute('src');
-    image.alt = '';
-    figure.hidden = true;
-    dialog.classList.remove('has-image');
-  }
-
-  function showDialog(data, trigger) {
-    lastTrigger = trigger;
-
-    title.textContent = clean(data.title) || 'Entrada del archivo vivo';
-    date.textContent = clean(data.date);
-    type.textContent = clean(data.type) || 'archivo';
-    body.textContent = String(data.body || '').trim();
-
-    setIdentity(data.element, data.feature);
-    setImage(data.image, title.textContent);
-
-    dialog.showModal();
-    shell.scrollTop = 0;
-    requestAnimationFrame(() => dialog.classList.add('is-visible'));
-  }
 
   function closeDialog() {
     if (!dialog.open || dialog.classList.contains('is-closing')) return;
@@ -125,31 +77,53 @@
         'is-closing',
         'is-minimoto',
         'is-polyvalent',
-        'is-feature',
         'has-image'
       );
       lastTrigger?.focus({ preventScroll: true });
     }, 300);
   }
 
-  function openArchiveEntry(entry, trigger) {
+  function openDialog(entry, trigger) {
     const heading = entry.querySelector('h3');
     const entryDate = entry.querySelector('time');
     const entryType = entry.querySelector('.archive-entry-type');
     const entryImage = entry.querySelector('img');
 
-    showDialog({
-      title: heading?.textContent,
-      date: entryDate?.textContent,
-      type: entryType?.textContent,
-      body: entry.dataset.archiveFullText,
-      image: entryImage,
-      element: entry,
-      feature: false
-    }, trigger);
+    lastTrigger = trigger || entry.querySelector('.archive-expand');
+
+    title.textContent =
+      clean(heading?.textContent) || 'Entrada del archivo vivo';
+    date.textContent = clean(entryDate?.textContent);
+    type.textContent = clean(entryType?.textContent) || 'archivo';
+    body.textContent = entry.dataset.archiveFullText || '';
+
+    dialog.classList.toggle(
+      'is-minimoto',
+      entry.classList.contains('is-minimoto')
+    );
+    dialog.classList.toggle(
+      'is-polyvalent',
+      entry.classList.contains('is-polyvalent')
+    );
+
+    if (entryImage?.src) {
+      image.src = entryImage.src;
+      image.alt = entryImage.alt || `Imagen de ${title.textContent}`;
+      figure.hidden = false;
+      dialog.classList.add('has-image');
+    } else {
+      image.removeAttribute('src');
+      image.alt = '';
+      figure.hidden = true;
+      dialog.classList.remove('has-image');
+    }
+
+    dialog.showModal();
+    shell.scrollTop = 0;
+    requestAnimationFrame(() => dialog.classList.add('is-visible'));
   }
 
-  function enhanceArchiveEntry(entry) {
+  function enhanceEntry(entry) {
     if (entry.dataset.archiveZoomReady === 'true') return;
 
     const content = entry.children[2];
@@ -162,7 +136,7 @@
     entry.dataset.archiveZoomReady = 'true';
     entry.classList.add('archive-entry-compact');
 
-    paragraph.textContent = excerpt(fullText, MAX_ARCHIVE_SUMMARY);
+    paragraph.textContent = excerpt(fullText);
     paragraph.classList.add('archive-entry-summary');
 
     const button = document.createElement('button');
@@ -173,115 +147,19 @@
 
     button.addEventListener('click', event => {
       event.stopPropagation();
-      openArchiveEntry(entry, button);
+      openDialog(entry, button);
     });
 
     content.append(button);
 
     entry.addEventListener('click', event => {
       if (event.target.closest('a, button')) return;
-      openArchiveEntry(entry, button);
+      openDialog(entry, button);
     });
   }
 
-  function enhanceArchive() {
-    archiveRoot
-      ?.querySelectorAll('.archive-entry')
-      .forEach(enhanceArchiveEntry);
-  }
-
-  function openLatest(trigger) {
-    if (!latest) return;
-
-    const paragraph = latest.querySelector('#latest-post-body');
-    const fullText =
-      latest.dataset.archiveFullText ||
-      String(paragraph?.textContent || '').trim();
-
-    showDialog({
-      title: latest.querySelector('#latest-post-title')?.textContent,
-      date: latest.querySelector('#latest-post-date')?.textContent,
-      type: latest.querySelector('#latest-post-tag')?.textContent,
-      body: fullText,
-      image: latest.querySelector('#latest-post-media img'),
-      element: latest,
-      feature: true
-    }, trigger);
-  }
-
-  function ensureLatestButton() {
-    if (!latest) return null;
-
-    const copy = latest.querySelector('.feature-copy');
-    if (!copy) return null;
-
-    let button = copy.querySelector('.latest-expand');
-
-    if (!button) {
-      button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'latest-expand';
-      button.innerHTML = `
-        <span>Leer entrada completa</span>
-        <span aria-hidden="true">＋</span>
-      `;
-
-      button.addEventListener('click', event => {
-        event.stopPropagation();
-        openLatest(button);
-      });
-
-      copy.append(button);
-    }
-
-    return button;
-  }
-
-  function syncLatest() {
-    if (!latest || writingLatestSummary) return;
-
-    const paragraph = latest.querySelector('#latest-post-body');
-    if (!paragraph) return;
-
-    const currentText = String(paragraph.textContent || '').trim();
-    const previousSummary = latest.dataset.archiveSummaryText || '';
-
-    /*
-      app.js escribe primero el texto completo. Después este script conserva
-      ese texto en data-archive-full-text y solo deja visible el resumen.
-    */
-    if (currentText && currentText !== previousSummary) {
-      latest.dataset.archiveFullText = currentText;
-    }
-
-    const fullText = latest.dataset.archiveFullText || currentText;
-    if (!fullText) return;
-
-    const summary = excerpt(fullText, MAX_FEATURE_SUMMARY);
-
-    latest.dataset.archiveSummaryText = summary;
-    latest.dataset.archiveZoomReady = 'true';
-    latest.classList.add('feature-card-compact');
-    paragraph.classList.add('latest-post-summary');
-
-    if (clean(paragraph.textContent) !== clean(summary)) {
-      writingLatestSummary = true;
-      paragraph.textContent = summary;
-      queueMicrotask(() => {
-        writingLatestSummary = false;
-      });
-    }
-
-    const button = ensureLatestButton();
-
-    if (latest.dataset.latestCardClickReady !== 'true') {
-      latest.dataset.latestCardClickReady = 'true';
-
-      latest.addEventListener('click', event => {
-        if (event.target.closest('a, button')) return;
-        openLatest(button);
-      });
-    }
+  function enhanceAll() {
+    root.querySelectorAll('.archive-entry').forEach(enhanceEntry);
   }
 
   closeButtons.forEach(button =>
@@ -297,19 +175,7 @@
     if (event.target === dialog) closeDialog();
   });
 
-  if (archiveRoot) {
-    const archiveObserver = new MutationObserver(enhanceArchive);
-    archiveObserver.observe(archiveRoot, { childList: true });
-    enhanceArchive();
-  }
-
-  if (latest) {
-    const latestObserver = new MutationObserver(syncLatest);
-    latestObserver.observe(latest, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
-    syncLatest();
-  }
+  const observer = new MutationObserver(enhanceAll);
+  observer.observe(root, { childList: true });
+  enhanceAll();
 })();

@@ -1,0 +1,74 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&display=swap");
+
+/*
+  La Central Baja — actualización del wordmark
+  Referencia: sans geométrica, mayúsculas, peso medio y tracking amplio.
+  Este archivo afecta únicamente al nombre de marca del header y del footer.
+*/
+
+.brand span,
+.footer-title {
+  font-family: "Montserrat", "Avenir Next", "Futura", "Century Gothic", Arial, sans-serif;
+  font-weight: 600;
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+/* Wordmark pequeño del encabezado */
+.brand {
+  gap: 12px;
+}
+
+.brand span {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: .225em;
+}
+
+/* Ajuste mínimo del símbolo para que dialogue con el nuevo wordmark */
+.brand img {
+  width: 21px;
+  height: 27px;
+  object-fit: contain;
+}
+
+/* Wordmark grande del cierre */
+.footer-title {
+  max-width: var(--max);
+  margin: 0 auto 70px;
+  font-size: clamp(34px, 6.9vw, 112px);
+  line-height: .94;
+  letter-spacing: .18em;
+  word-spacing: .04em;
+  text-wrap: balance;
+}
+
+/* Evita que el tracking provoque un corte visual al final */
+.footer-title::after {
+  content: "";
+  display: inline-block;
+  width: 0;
+  margin-left: -.18em;
+}
+
+@media (max-width: 720px) {
+  .brand span {
+    font-size: 9px;
+    letter-spacing: .18em;
+  }
+
+  .brand img {
+    width: 18px;
+    height: 24px;
+  }
+
+  .footer-title {
+    margin-bottom: 54px;
+    font-size: clamp(30px, 11vw, 58px);
+    line-height: 1.02;
+    letter-spacing: .13em;
+    word-spacing: 0;
+  }
+}

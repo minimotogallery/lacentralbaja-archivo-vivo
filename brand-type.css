@@ -1,9 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&display=swap");
 
 /*
-  La Central Baja — actualización del wordmark
-  Referencia: sans geométrica, mayúsculas, peso medio y tracking amplio.
-  Este archivo afecta únicamente al nombre de marca del header y del footer.
+  La Central Baja — wordmark + símbolo en movimiento
 */
 
 .brand span,
@@ -27,7 +25,6 @@
   letter-spacing: .225em;
 }
 
-/* Ajuste mínimo del símbolo para que dialogue con el nuevo wordmark */
 .brand img {
   width: 21px;
   height: 27px;
@@ -45,12 +42,153 @@
   text-wrap: balance;
 }
 
-/* Evita que el tracking provoque un corte visual al final */
 .footer-title::after {
   content: "";
   display: inline-block;
   width: 0;
   margin-left: -.18em;
+}
+
+/* ================================================================
+   Símbolo vivo
+   ================================================================ */
+
+.hero-mark {
+  isolation: isolate;
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(28, 55, 255, .055) 0,
+      rgba(28, 55, 255, .018) 25%,
+      transparent 52%
+    ),
+    rgba(247, 248, 249, .35);
+}
+
+/* La retícula existente permanece por debajo de la animación */
+.hero-mark::before {
+  z-index: 0;
+  animation: lcb-grid-breath 12s ease-in-out infinite;
+}
+
+/*
+  Réplica cromática del símbolo.
+  Se construye usando el propio logotipo real como máscara, por lo que no
+  se inventa ni redibuja la identidad.
+*/
+.hero-mark::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  width: min(62%, 430px);
+  aspect-ratio: 790 / 958;
+  background: var(--blue);
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+
+  -webkit-mask:
+    url("./assets/logo-central-baja.png")
+    center / contain no-repeat;
+  mask:
+    url("./assets/logo-central-baja.png")
+    center / contain no-repeat;
+
+  animation: lcb-logo-echo 12s cubic-bezier(.65, 0, .35, 1) infinite;
+  will-change: transform, opacity, background-color;
+}
+
+.hero-mark > img {
+  z-index: 2;
+  transform-origin: 50% 50%;
+  animation: lcb-logo-breathe 12s cubic-bezier(.65, 0, .35, 1) infinite;
+  will-change: transform, filter;
+}
+
+.hero-meta {
+  z-index: 4;
+}
+
+/* Respiración estructural: expansión, tensión y retorno */
+@keyframes lcb-logo-breathe {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: contrast(1);
+  }
+
+  14% {
+    transform: translate3d(0, -1.1%, 0) scale(.986, 1.016);
+  }
+
+  29% {
+    transform: translate3d(.7%, 0, 0) scale(1.018, .988);
+    filter: contrast(1.04);
+  }
+
+  45% {
+    transform: translate3d(0, .8%, 0) rotate(.7deg) scale(1.026);
+  }
+
+  61% {
+    transform: translate3d(-.65%, 0, 0) rotate(-.65deg) scale(.994, 1.012);
+  }
+
+  78% {
+    transform: translate3d(0, -.4%, 0) scale(1.008);
+    filter: contrast(1.02);
+  }
+}
+
+/* Eco breve, como un pequeño error de registro de impresión */
+@keyframes lcb-logo-echo {
+  0%,
+  10%,
+  38%,
+  55%,
+  84%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  18% {
+    opacity: .16;
+    background: var(--blue);
+    transform: translate3d(-9px, 7px, 0) scale(.985, 1.012);
+  }
+
+  27% {
+    opacity: .05;
+    background: var(--blue);
+    transform: translate3d(12px, -8px, 0) scale(1.025, .99);
+  }
+
+  64% {
+    opacity: .13;
+    background: var(--orange);
+    transform: translate3d(8px, 10px, 0) rotate(.7deg) scale(1.014);
+  }
+
+  73% {
+    opacity: .035;
+    background: var(--orange);
+    transform: translate3d(-11px, -6px, 0) rotate(-.55deg) scale(.99, 1.02);
+  }
+}
+
+/* La cruz central de la retícula también respira apenas */
+@keyframes lcb-grid-breath {
+  0%,
+  100% {
+    opacity: .28;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: .48;
+    transform: scale(1.012);
+  }
 }
 
 @media (max-width: 720px) {
@@ -70,5 +208,28 @@
     line-height: 1.02;
     letter-spacing: .13em;
     word-spacing: 0;
+  }
+
+  .hero-mark::after {
+    width: min(60%, 310px);
+  }
+
+  .hero-mark > img,
+  .hero-mark::after,
+  .hero-mark::before {
+    animation-duration: 14s;
+  }
+}
+
+/* Accesibilidad: nada se mueve si el sistema solicita reducir animaciones */
+@media (prefers-reduced-motion: reduce) {
+  .hero-mark > img,
+  .hero-mark::after,
+  .hero-mark::before {
+    animation: none !important;
+  }
+
+  .hero-mark::after {
+    display: none;
   }
 }

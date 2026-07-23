@@ -236,10 +236,8 @@
 
   const boardState = {
     posts: [],
-    activeIndex: 0,
     loading: false,
-    loaded: false,
-    switching: false
+    loaded: false
   };
 
   function fallbackPostFromLatest() {
@@ -339,7 +337,7 @@
     button.dataset.postIndex = String(index);
     button.setAttribute(
       'aria-label',
-      `Mostrar “${post.title || 'entrada del archivo'}” en primer plano`
+      `Abrir “${post.title || 'entrada del archivo'}” completa`
     );
 
     const media = document.createElement('span');
@@ -384,12 +382,14 @@
 
     const action = document.createElement('span');
     action.className = 'recent-post-action';
-    action.textContent = 'Poner en primer plano ↗';
+    action.textContent = 'Abrir entrada completa ＋';
 
     copy.append(meta, category, heading, summary, action);
     button.append(media, copy);
 
-    button.addEventListener('click', () => activatePost(index));
+    button.addEventListener('click', () => {
+      openPost(post, button, button, true);
+    });
     return button;
   }
 
@@ -406,9 +406,8 @@
     }
 
     const cards = boardState.posts
-      .map((post, index) => ({ post, index }))
-      .filter(item => item.index !== boardState.activeIndex)
-      .map(item => secondaryCard(item.post, item.index));
+      .slice(1, 3)
+      .map((post, offset) => secondaryCard(post, offset + 1));
 
     switcher.replaceChildren(...cards);
     switcher.hidden = cards.length === 0;
@@ -417,7 +416,7 @@
   function renderActivePost() {
     if (!latest || !boardState.posts.length) return;
 
-    const post = boardState.posts[boardState.activeIndex];
+    const post = boardState.posts[0];
     const minimoto = isMiniMoto(post);
     const polyvalent = !minimoto && isPolyvalent(post);
     const summary = excerpt(
@@ -442,8 +441,7 @@
     }
     if (counter) {
       counter.textContent =
-        `${String(boardState.activeIndex + 1).padStart(2, '0')} / ` +
-        `${String(boardState.posts.length).padStart(2, '0')}`;
+        `01 / ${String(boardState.posts.length).padStart(2, '0')}`;
     }
 
     renderMainTitle(post);
@@ -451,28 +449,7 @@
     ensureMainExpand(post);
     renderSwitcher();
 
-    latest.dataset.activeRecentIndex = String(boardState.activeIndex);
-  }
-
-  function activatePost(index) {
-    if (
-      boardState.switching ||
-      index === boardState.activeIndex ||
-      !boardState.posts[index]
-    ) return;
-
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    boardState.switching = true;
-    latest?.classList.add('is-switching');
-
-    window.setTimeout(() => {
-      boardState.activeIndex = index;
-      renderActivePost();
-      requestAnimationFrame(() => {
-        latest?.classList.remove('is-switching');
-        boardState.switching = false;
-      });
-    }, reduced ? 0 : 160);
+    latest.dataset.activeRecentIndex = '0';
   }
 
   function bindMainCardZoom() {
@@ -481,7 +458,7 @@
 
     latest.addEventListener('click', event => {
       if (event.target.closest('a, button, .latest-post-switcher')) return;
-      const post = boardState.posts[boardState.activeIndex];
+      const post = boardState.posts[0];
       if (post) openPost(post, latest.querySelector('.latest-expand'), latest, true);
     });
   }

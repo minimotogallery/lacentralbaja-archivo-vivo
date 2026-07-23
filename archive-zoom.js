@@ -1,17 +1,50 @@
 (() => {
-  const root = document.querySelector('#archive-list');
-  if (!root) return;
+  const archiveRoot = document.querySelector('#archive-list');
+  const latest = document.querySelector('#latest-post');
 
-  const MAX_SUMMARY = 300;
+  if (!archiveRoot && !latest) return;
+
+  const MAX_ARCHIVE_SUMMARY = 300;
+  const MAX_FEATURE_SUMMARY = 430;
   const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
 
-  function excerpt(value) {
+  function excerpt(value, max) {
     const text = clean(value);
-    if (text.length <= MAX_SUMMARY) return text;
-    const cut = text.slice(0, MAX_SUMMARY);
+    if (text.length <= max) return text;
+    const cut = text.slice(0, max);
     const lastSpace = cut.lastIndexOf(' ');
-    return `${cut.slice(0, lastSpace > 220 ? lastSpace : MAX_SUMMARY).trim()}…`;
+    return `${cut.slice(0, lastSpace > max * .72 ? lastSpace : max).trim()}…`;
   }
+
+  function formatDate(value) {
+    const parsed = new Date(Number(value) || value);
+    if (Number.isNaN(parsed.getTime())) return 'Sin fecha';
+    return new Intl.DateTimeFormat('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(parsed);
+  }
+
+  function isMiniMoto(item = {}) {
+    return [
+      item.title,
+      item.author,
+      ...(Array.isArray(item.tags) ? item.tags : [])
+    ].some(value => clean(value).toLocaleLowerCase('es').includes('minimoto'));
+  }
+
+  function isPolyvalent(item = {}) {
+    return !isMiniMoto(item) && [
+      item.title,
+      item.author,
+      ...(Array.isArray(item.tags) ? item.tags : [])
+    ].some(value => clean(value).toLocaleLowerCase('es').includes('polivalente'));
+  }
+
+  /* ---------------------------------------------------------------
+     Zoom editorial compartido
+     --------------------------------------------------------------- */
 
   const dialog = document.createElement('dialog');
   dialog.id = 'archive-zoom-dialog';
@@ -51,18 +84,67 @@
   document.body.append(dialog);
 
   const shell = dialog.querySelector('.archive-zoom-shell');
-  const title = dialog.querySelector('#archive-zoom-title');
-  const date = dialog.querySelector('#archive-zoom-date');
-  const type = dialog.querySelector('#archive-zoom-type');
-  const body = dialog.querySelector('#archive-zoom-body');
-  const figure = dialog.querySelector('.archive-zoom-media');
-  const image = dialog.querySelector('#archive-zoom-image');
+  const zoomTitle = dialog.querySelector('#archive-zoom-title');
+  const zoomDate = dialog.querySelector('#archive-zoom-date');
+  const zoomType = dialog.querySelector('#archive-zoom-type');
+  const zoomBody = dialog.querySelector('#archive-zoom-body');
+  const zoomFigure = dialog.querySelector('.archive-zoom-media');
+  const zoomImage = dialog.querySelector('#archive-zoom-image');
   const closeButtons = dialog.querySelectorAll(
     '.archive-zoom-close, .archive-zoom-bottom-close'
   );
 
   let closeTimer = 0;
   let lastTrigger = null;
+
+  function applyIdentity(post, sourceElement, feature = false) {
+    const minimoto = isMiniMoto(post) || sourceElement?.classList.contains('is-minimoto');
+    const polyvalent = !minimoto && (
+      isPolyvalent(post) || sourceElement?.classList.contains('is-polyvalent')
+    );
+
+    dialog.classList.toggle('is-minimoto', minimoto);
+    dialog.classList.toggle('is-polyvalent', polyvalent);
+    dialog.classList.toggle('is-feature', feature);
+  }
+
+  function setZoomImage(source, titleText) {
+    const src = typeof source === 'string' ? source : source?.src;
+    const alt = typeof source === 'string' ? '' : source?.alt;
+
+    if (src) {
+      zoomImage.src = src;
+      zoomImage.alt = alt || `Imagen de ${titleText}`;
+      zoomFigure.hidden = false;
+      dialog.classList.add('has-image');
+    } else {
+      zoomImage.removeAttribute('src');
+      zoomImage.alt = '';
+      zoomFigure.hidden = true;
+      dialog.classList.remove('has-image');
+    }
+  }
+
+  function openPost(post, trigger, sourceElement, feature = false) {
+    if (!post) return;
+
+    lastTrigger = trigger || null;
+    const titleText = clean(post.title) || 'Entrada del archivo vivo';
+
+    zoomTitle.textContent = titleText;
+    zoomDate.textContent = post.displayDate || formatDate(post.createdAt);
+    zoomType.textContent = post.tags?.[0] || post.type || 'archivo';
+    zoomBody.textContent = String(post.body || '').trim();
+
+    applyIdentity(post, sourceElement, feature);
+    setZoomImage(post.imageUrl || post.image, titleText);
+
+    if (!dialog.open) dialog.showModal();
+    shell.scrollTop = 0;
+    requestAnimationFrame(() => dialog.classList.add('is-visible'));
+  }
+
+  window.openArchiveZoomPost = openPost;
 
   function closeDialog() {
     if (!dialog.open || dialog.classList.contains('is-closing')) return;
@@ -77,94 +159,14 @@
         'is-closing',
         'is-minimoto',
         'is-polyvalent',
+        'is-feature',
         'has-image'
       );
       lastTrigger?.focus({ preventScroll: true });
     }, 300);
   }
 
-  function openDialog(entry, trigger) {
-    const heading = entry.querySelector('h3');
-    const entryDate = entry.querySelector('time');
-    const entryType = entry.querySelector('.archive-entry-type');
-    const entryImage = entry.querySelector('img');
-
-    lastTrigger = trigger || entry.querySelector('.archive-expand');
-
-    title.textContent =
-      clean(heading?.textContent) || 'Entrada del archivo vivo';
-    date.textContent = clean(entryDate?.textContent);
-    type.textContent = clean(entryType?.textContent) || 'archivo';
-    body.textContent = entry.dataset.archiveFullText || '';
-
-    dialog.classList.toggle(
-      'is-minimoto',
-      entry.classList.contains('is-minimoto')
-    );
-    dialog.classList.toggle(
-      'is-polyvalent',
-      entry.classList.contains('is-polyvalent')
-    );
-
-    if (entryImage?.src) {
-      image.src = entryImage.src;
-      image.alt = entryImage.alt || `Imagen de ${title.textContent}`;
-      figure.hidden = false;
-      dialog.classList.add('has-image');
-    } else {
-      image.removeAttribute('src');
-      image.alt = '';
-      figure.hidden = true;
-      dialog.classList.remove('has-image');
-    }
-
-    dialog.showModal();
-    shell.scrollTop = 0;
-    requestAnimationFrame(() => dialog.classList.add('is-visible'));
-  }
-
-  function enhanceEntry(entry) {
-    if (entry.dataset.archiveZoomReady === 'true') return;
-
-    const content = entry.children[2];
-    const paragraph = content?.querySelector('p');
-    if (!content || !paragraph) return;
-
-    const fullText = String(paragraph.textContent || '').trim();
-
-    entry.dataset.archiveFullText = fullText;
-    entry.dataset.archiveZoomReady = 'true';
-    entry.classList.add('archive-entry-compact');
-
-    paragraph.textContent = excerpt(fullText);
-    paragraph.classList.add('archive-entry-summary');
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'archive-expand';
-    button.innerHTML =
-      '<span>Leer entrada completa</span><span aria-hidden="true">＋</span>';
-
-    button.addEventListener('click', event => {
-      event.stopPropagation();
-      openDialog(entry, button);
-    });
-
-    content.append(button);
-
-    entry.addEventListener('click', event => {
-      if (event.target.closest('a, button')) return;
-      openDialog(entry, button);
-    });
-  }
-
-  function enhanceAll() {
-    root.querySelectorAll('.archive-entry').forEach(enhanceEntry);
-  }
-
-  closeButtons.forEach(button =>
-    button.addEventListener('click', closeDialog)
-  );
+  closeButtons.forEach(button => button.addEventListener('click', closeDialog));
 
   dialog.addEventListener('cancel', event => {
     event.preventDefault();
@@ -175,7 +177,379 @@
     if (event.target === dialog) closeDialog();
   });
 
-  const observer = new MutationObserver(enhanceAll);
-  observer.observe(root, { childList: true });
-  enhanceAll();
+  /* ---------------------------------------------------------------
+     Entradas del archivo
+     --------------------------------------------------------------- */
+
+  function archivePostFromEntry(entry) {
+    return {
+      title: entry.querySelector('h3')?.textContent,
+      body: entry.dataset.archiveFullText || '',
+      displayDate: entry.querySelector('time')?.textContent,
+      type: entry.querySelector('.archive-entry-type')?.textContent,
+      tags: [entry.querySelector('.archive-entry-type')?.textContent || 'archivo'],
+      image: entry.querySelector('img') || null
+    };
+  }
+
+  function enhanceArchiveEntry(entry) {
+    if (entry.dataset.archiveZoomReady === 'true') return;
+
+    const content = entry.children[2];
+    const paragraph = content?.querySelector('p');
+    if (!content || !paragraph) return;
+
+    const fullText = String(paragraph.textContent || '').trim();
+    entry.dataset.archiveFullText = fullText;
+    entry.dataset.archiveZoomReady = 'true';
+    entry.classList.add('archive-entry-compact');
+
+    paragraph.textContent = excerpt(fullText, MAX_ARCHIVE_SUMMARY);
+    paragraph.classList.add('archive-entry-summary');
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'archive-expand';
+    button.innerHTML =
+      '<span>Leer entrada completa</span><span aria-hidden="true">＋</span>';
+
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      openPost(archivePostFromEntry(entry), button, entry, false);
+    });
+
+    content.append(button);
+
+    entry.addEventListener('click', event => {
+      if (event.target.closest('a, button')) return;
+      openPost(archivePostFromEntry(entry), button, entry, false);
+    });
+  }
+
+  function enhanceArchive() {
+    archiveRoot?.querySelectorAll('.archive-entry').forEach(enhanceArchiveEntry);
+  }
+
+  /* ---------------------------------------------------------------
+     Tablón con las tres publicaciones más recientes
+     --------------------------------------------------------------- */
+
+  const boardState = {
+    posts: [],
+    activeIndex: 0,
+    loading: false,
+    loaded: false,
+    switching: false
+  };
+
+  function fallbackPostFromLatest() {
+    if (!latest) return null;
+    const image = latest.querySelector('#latest-post-media img');
+    return {
+      title: latest.querySelector('#latest-post-title')?.textContent,
+      body: latest.querySelector('#latest-post-body')?.textContent,
+      displayDate: latest.querySelector('#latest-post-date')?.textContent,
+      tags: [latest.querySelector('#latest-post-tag')?.textContent || 'Archivo vivo'],
+      imageUrl: image?.src || ''
+    };
+  }
+
+  function renderMainMedia(post) {
+    const media = latest?.querySelector('#latest-post-media');
+    if (!media) return;
+
+    if (post.imageUrl) {
+      const image = document.createElement('img');
+      image.src = post.imageUrl;
+      image.alt = post.title
+        ? `Imagen de “${post.title}”`
+        : 'Imagen del archivo vivo';
+      media.replaceChildren(image);
+      return;
+    }
+
+    const fallback = document.createElement('div');
+    fallback.className = 'fallback-grid';
+    fallback.setAttribute('aria-hidden', 'true');
+    fallback.innerHTML = '<span>archivo vivo</span>';
+    media.replaceChildren(fallback);
+  }
+
+  function renderMainTitle(post) {
+    const heading = latest?.querySelector('#latest-post-title');
+    if (!heading) return;
+
+    heading.replaceChildren();
+
+    if (isMiniMoto(post)) {
+      const link = document.createElement('a');
+      link.href = 'https://minimotogallery.github.io/minimoto-gallery/';
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = post.title || 'Entrada de MiniMoto Gallery';
+      heading.append(link);
+    } else {
+      heading.textContent = post.title || 'Entrada del archivo vivo';
+    }
+  }
+
+  function ensurePositionCounter() {
+    const meta = latest?.querySelector('.meta-row');
+    if (!meta) return null;
+
+    let counter = meta.querySelector('.recent-position');
+    if (!counter) {
+      counter = document.createElement('span');
+      counter.className = 'recent-position';
+      counter.setAttribute('aria-live', 'polite');
+      meta.insertBefore(counter, meta.children[1] || null);
+    }
+    return counter;
+  }
+
+  function ensureMainExpand(post) {
+    const copy = latest?.querySelector('.feature-copy');
+    if (!copy) return;
+
+    copy.querySelector('.latest-expand')?.remove();
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'latest-expand';
+    button.innerHTML = `
+      <span>Leer entrada completa</span>
+      <span aria-hidden="true">＋</span>
+    `;
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      openPost(post, button, latest, true);
+    });
+    copy.append(button);
+  }
+
+  function secondaryCard(post, index) {
+    const button = document.createElement('button');
+    const minimoto = isMiniMoto(post);
+    const polyvalent = !minimoto && isPolyvalent(post);
+
+    button.type = 'button';
+    button.className = 'recent-post-card';
+    if (minimoto) button.classList.add('is-minimoto');
+    if (polyvalent) button.classList.add('is-polyvalent');
+    button.dataset.postIndex = String(index);
+    button.setAttribute(
+      'aria-label',
+      `Mostrar “${post.title || 'entrada del archivo'}” en primer plano`
+    );
+
+    const media = document.createElement('span');
+    media.className = 'recent-post-media';
+
+    if (post.imageUrl) {
+      const image = document.createElement('img');
+      image.src = post.imageUrl;
+      image.alt = '';
+      image.loading = 'lazy';
+      media.append(image);
+    } else {
+      const fallback = document.createElement('span');
+      fallback.className = 'recent-post-fallback';
+      fallback.textContent = String(index + 1).padStart(2, '0');
+      media.append(fallback);
+    }
+
+    const copy = document.createElement('span');
+    copy.className = 'recent-post-copy';
+
+    const meta = document.createElement('span');
+    meta.className = 'recent-post-meta';
+    meta.innerHTML = `
+      <span>${String(index + 1).padStart(2, '0')} / ${String(boardState.posts.length).padStart(2, '0')}</span>
+      <time>${formatDate(post.createdAt)}</time>
+    `;
+
+    const category = document.createElement('span');
+    category.className = 'recent-post-category';
+    category.textContent = post.tags?.[0] || 'Archivo vivo';
+
+    const heading = document.createElement('strong');
+    heading.textContent = post.title || 'Entrada del archivo vivo';
+
+    const summary = document.createElement('span');
+    summary.className = 'recent-post-summary';
+    summary.textContent = excerpt(
+      post.body || `Publicado por ${post.author || 'Anónimo'}.`,
+      170
+    );
+
+    const action = document.createElement('span');
+    action.className = 'recent-post-action';
+    action.textContent = 'Poner en primer plano ↗';
+
+    copy.append(meta, category, heading, summary, action);
+    button.append(media, copy);
+
+    button.addEventListener('click', () => activatePost(index));
+    return button;
+  }
+
+  function renderSwitcher() {
+    if (!latest) return;
+
+    let switcher = latest.querySelector('.latest-post-switcher');
+    if (!switcher) {
+      switcher = document.createElement('div');
+      switcher.className = 'latest-post-switcher';
+      switcher.setAttribute('role', 'list');
+      switcher.setAttribute('aria-label', 'Otras publicaciones recientes');
+      latest.append(switcher);
+    }
+
+    const cards = boardState.posts
+      .map((post, index) => ({ post, index }))
+      .filter(item => item.index !== boardState.activeIndex)
+      .map(item => secondaryCard(item.post, item.index));
+
+    switcher.replaceChildren(...cards);
+    switcher.hidden = cards.length === 0;
+  }
+
+  function renderActivePost() {
+    if (!latest || !boardState.posts.length) return;
+
+    const post = boardState.posts[boardState.activeIndex];
+    const minimoto = isMiniMoto(post);
+    const polyvalent = !minimoto && isPolyvalent(post);
+    const summary = excerpt(
+      post.body || `Publicado por ${post.author || 'Anónimo'}.`,
+      MAX_FEATURE_SUMMARY
+    );
+
+    latest.classList.add('recent-board-ready', 'feature-card-compact');
+    latest.classList.toggle('is-minimoto', minimoto);
+    latest.classList.toggle('is-polyvalent', polyvalent);
+
+    const tag = latest.querySelector('#latest-post-tag');
+    const dateNode = latest.querySelector('#latest-post-date');
+    const paragraph = latest.querySelector('#latest-post-body');
+    const counter = ensurePositionCounter();
+
+    if (tag) tag.textContent = post.tags?.[0] || 'Archivo vivo';
+    if (dateNode) dateNode.textContent = formatDate(post.createdAt);
+    if (paragraph) {
+      paragraph.textContent = summary;
+      paragraph.classList.add('latest-post-summary');
+    }
+    if (counter) {
+      counter.textContent =
+        `${String(boardState.activeIndex + 1).padStart(2, '0')} / ` +
+        `${String(boardState.posts.length).padStart(2, '0')}`;
+    }
+
+    renderMainTitle(post);
+    renderMainMedia(post);
+    ensureMainExpand(post);
+    renderSwitcher();
+
+    latest.dataset.activeRecentIndex = String(boardState.activeIndex);
+  }
+
+  function activatePost(index) {
+    if (
+      boardState.switching ||
+      index === boardState.activeIndex ||
+      !boardState.posts[index]
+    ) return;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    boardState.switching = true;
+    latest?.classList.add('is-switching');
+
+    window.setTimeout(() => {
+      boardState.activeIndex = index;
+      renderActivePost();
+      requestAnimationFrame(() => {
+        latest?.classList.remove('is-switching');
+        boardState.switching = false;
+      });
+    }, reduced ? 0 : 160);
+  }
+
+  function bindMainCardZoom() {
+    if (!latest || latest.dataset.mainZoomReady === 'true') return;
+    latest.dataset.mainZoomReady = 'true';
+
+    latest.addEventListener('click', event => {
+      if (event.target.closest('a, button, .latest-post-switcher')) return;
+      const post = boardState.posts[boardState.activeIndex];
+      if (post) openPost(post, latest.querySelector('.latest-expand'), latest, true);
+    });
+  }
+
+  async function loadRecentBoard() {
+    if (!latest || boardState.loading || boardState.loaded) return;
+    boardState.loading = true;
+
+    try {
+      const response = await fetch('/api/board', {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error(String(response.status));
+
+      const result = await response.json();
+      const rawPosts = Array.isArray(result)
+        ? result
+        : (result.posts || result.items || []);
+
+      boardState.posts = rawPosts
+        .filter(post => post && post.approved !== false)
+        .sort(
+          (a, b) =>
+            (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0)
+        )
+        .slice(0, 3);
+
+      if (!boardState.posts.length) {
+        const fallback = fallbackPostFromLatest();
+        if (fallback) boardState.posts = [fallback];
+      }
+
+      boardState.loaded = true;
+      renderActivePost();
+      bindMainCardZoom();
+    } catch (error) {
+      const fallback = fallbackPostFromLatest();
+      if (fallback) {
+        boardState.posts = [fallback];
+        boardState.loaded = true;
+        renderActivePost();
+        bindMainCardZoom();
+      }
+      console.warn('No se pudo construir el tablón reciente:', error);
+    } finally {
+      boardState.loading = false;
+    }
+  }
+
+  function initAfterAppRender() {
+    enhanceArchive();
+
+    if (archiveRoot?.querySelector('.archive-entry')) {
+      loadRecentBoard();
+    }
+  }
+
+  if (archiveRoot) {
+    const observer = new MutationObserver(() => {
+      enhanceArchive();
+      if (!boardState.loaded && archiveRoot.querySelector('.archive-entry')) {
+        loadRecentBoard();
+      }
+    });
+    observer.observe(archiveRoot, { childList: true });
+  }
+
+  initAfterAppRender();
+  window.setTimeout(loadRecentBoard, 1200);
 })();

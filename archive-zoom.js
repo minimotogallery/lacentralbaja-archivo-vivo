@@ -1,49 +1,94 @@
 (() => {
   const archiveRoot = document.querySelector('#archive-list');
   const latest = document.querySelector('#latest-post');
-
   if (!archiveRoot && !latest) return;
 
-  const MAX_ARCHIVE_SUMMARY = 300;
-  const MAX_FEATURE_SUMMARY = 430;
-  const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
+  const I18N = window.LCB_I18N || {};
+  const LANG = I18N.lang || 'es';
+  const t = {
+    es: {
+      closeAria: 'Cerrar entrada',
+      close: 'Cerrar / zoom out ×',
+      archiveLabel: 'LCB / ARCHIVO VIVO',
+      reduce: 'Reducir entrada ↙',
+      noDate: 'Sin fecha',
+      imageOf: title => `Imagen de ${title}`,
+      entry: 'Entrada del archivo vivo',
+      archive: 'archivo',
+      read: 'Leer entrada completa',
+      open: title => `Abrir “${title || 'entrada del archivo'}” completa`,
+      livingArchive: 'Archivo vivo',
+      archiveFallback: 'archivo vivo',
+      miniEntry: 'Entrada de MiniMoto Gallery',
+      anonymous: 'Anónimo',
+      previousAria: 'Publicaciones anteriores',
+      previousLabel: 'PUBLICACIONES ANTERIORES',
+      full: 'Abrir entrada completa ＋',
+      loadError: 'No se pudo construir el tablón reciente:'
+    },
+    en: {
+      closeAria: 'Close entry',
+      close: 'Close / zoom out ×',
+      archiveLabel: 'LCB / LIVING ARCHIVE',
+      reduce: 'Reduce entry ↙',
+      noDate: 'No date',
+      imageOf: title => `Image of ${title}`,
+      entry: 'Living archive entry',
+      archive: 'archive',
+      read: 'Read full entry',
+      open: title => `Open “${title || 'archive entry'}” in full`,
+      livingArchive: 'Living archive',
+      archiveFallback: 'living archive',
+      miniEntry: 'MiniMoto Gallery entry',
+      anonymous: 'Anonymous',
+      previousAria: 'Previous publications',
+      previousLabel: 'PREVIOUS PUBLICATIONS',
+      full: 'Open full entry ＋',
+      loadError: 'The recent-publications board could not be built:'
+    },
+    zh: {
+      closeAria: '关闭条目',
+      close: '关闭 / 缩小 ×',
+      archiveLabel: 'LCB / 活态档案',
+      reduce: '缩小条目 ↙',
+      noDate: '无日期',
+      imageOf: title => `${title}的图片`,
+      entry: '活态档案条目',
+      archive: '档案',
+      read: '阅读完整条目',
+      open: title => `打开“${title || '档案条目'}”全文`,
+      livingArchive: '活态档案',
+      archiveFallback: '活态档案',
+      miniEntry: 'MiniMoto Gallery 条目',
+      anonymous: '匿名',
+      previousAria: '较早发布',
+      previousLabel: '较早发布',
+      full: '打开完整条目 ＋',
+      loadError: '无法生成近期发布面板：'
+    }
+  }[LANG];
 
-  function excerpt(value, max) {
+  const clean = I18N.clean || (value => String(value || '').replace(/\s+/g, ' ').trim());
+  const excerpt = I18N.excerpt || ((value, max) => {
     const text = clean(value);
-    if (text.length <= max) return text;
-    const cut = text.slice(0, max);
-    const lastSpace = cut.lastIndexOf(' ');
-    return `${cut.slice(0, lastSpace > max * .72 ? lastSpace : max).trim()}…`;
-  }
+    return text.length > max ? `${text.slice(0, max).trim()}…` : text;
+  });
+  const formatDate = I18N.formatDate || (value => {
+    const date = new Date(Number(value) || value);
+    return Number.isNaN(date.getTime()) ? t.noDate : date.toLocaleDateString();
+  });
+  const localizePost = I18N.localizePost || (post => post);
+  const isMiniMoto = I18N.isMiniMoto || (item =>
+    [item?.title, item?.author, ...(item?.tags || [])]
+      .some(value => clean(value).toLowerCase().includes('minimoto'))
+  );
+  const isPolyvalent = I18N.isPolyvalent || (() => false);
 
-  function formatDate(value) {
-    const parsed = new Date(Number(value) || value);
-    if (Number.isNaN(parsed.getTime())) return 'Sin fecha';
-    return new Intl.DateTimeFormat('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(parsed);
-  }
-
-  function isMiniMoto(item = {}) {
-    return [
-      item.title,
-      item.author,
-      ...(Array.isArray(item.tags) ? item.tags : [])
-    ].some(value => clean(value).toLocaleLowerCase('es').includes('minimoto'));
-  }
-
-  function isPolyvalent(item = {}) {
-    return !isMiniMoto(item) && [
-      item.title,
-      item.author,
-      ...(Array.isArray(item.tags) ? item.tags : [])
-    ].some(value => clean(value).toLocaleLowerCase('es').includes('polivalente'));
-  }
+  const MAX_ARCHIVE_SUMMARY = LANG === 'zh' ? 150 : 300;
+  const MAX_FEATURE_SUMMARY = LANG === 'zh' ? 220 : 430;
 
   /* ---------------------------------------------------------------
-     Zoom editorial compartido
+     Shared editorial zoom
      --------------------------------------------------------------- */
 
   const dialog = document.createElement('dialog');
@@ -52,8 +97,8 @@
   dialog.setAttribute('aria-labelledby', 'archive-zoom-title');
   dialog.innerHTML = `
     <div class="archive-zoom-shell">
-      <button class="archive-zoom-close" type="button" aria-label="Cerrar entrada">
-        Cerrar / zoom out ×
+      <button class="archive-zoom-close" type="button" aria-label="${t.closeAria}">
+        ${t.close}
       </button>
 
       <header class="archive-zoom-head">
@@ -72,9 +117,9 @@
         <article class="archive-zoom-text">
           <p id="archive-zoom-body"></p>
           <footer>
-            <span>LCB / ARCHIVO VIVO</span>
+            <span>${t.archiveLabel}</span>
             <button class="archive-zoom-bottom-close" type="button">
-              Reducir entrada ↙
+              ${t.reduce}
             </button>
           </footer>
         </article>
@@ -98,7 +143,8 @@
   let lastTrigger = null;
 
   function applyIdentity(post, sourceElement, feature = false) {
-    const minimoto = isMiniMoto(post) || sourceElement?.classList.contains('is-minimoto');
+    const minimoto =
+      isMiniMoto(post) || sourceElement?.classList.contains('is-minimoto');
     const polyvalent = !minimoto && (
       isPolyvalent(post) || sourceElement?.classList.contains('is-polyvalent')
     );
@@ -114,7 +160,7 @@
 
     if (src) {
       zoomImage.src = src;
-      zoomImage.alt = alt || `Imagen de ${titleText}`;
+      zoomImage.alt = alt || t.imageOf(titleText);
       zoomFigure.hidden = false;
       dialog.classList.add('has-image');
     } else {
@@ -125,18 +171,19 @@
     }
   }
 
-  function openPost(post, trigger, sourceElement, feature = false) {
-    if (!post) return;
+  function openPost(rawPost, trigger, sourceElement, feature = false) {
+    if (!rawPost) return;
+    const post = localizePost(rawPost);
 
     lastTrigger = trigger || null;
-    const titleText = clean(post.title) || 'Entrada del archivo vivo';
+    const titleText = clean(post.title) || t.entry;
 
     zoomTitle.textContent = titleText;
     zoomDate.textContent = post.displayDate || formatDate(post.createdAt);
-    zoomType.textContent = post.tags?.[0] || post.type || 'archivo';
+    zoomType.textContent = post.tags?.[0] || post.type || t.archive;
     zoomBody.textContent = String(post.body || '').trim();
 
-    applyIdentity(post, sourceElement, feature);
+    applyIdentity(rawPost, sourceElement, feature);
     setZoomImage(post.imageUrl || post.image, titleText);
 
     if (!dialog.open) dialog.showModal();
@@ -178,7 +225,7 @@
   });
 
   /* ---------------------------------------------------------------
-     Entradas del archivo
+     Archive entries
      --------------------------------------------------------------- */
 
   function archivePostFromEntry(entry) {
@@ -187,7 +234,7 @@
       body: entry.dataset.archiveFullText || '',
       displayDate: entry.querySelector('time')?.textContent,
       type: entry.querySelector('.archive-entry-type')?.textContent,
-      tags: [entry.querySelector('.archive-entry-type')?.textContent || 'archivo'],
+      tags: [entry.querySelector('.archive-entry-type')?.textContent || t.archive],
       image: entry.querySelector('img') || null
     };
   }
@@ -210,8 +257,7 @@
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'archive-expand';
-    button.innerHTML =
-      '<span>Leer entrada completa</span><span aria-hidden="true">＋</span>';
+    button.innerHTML = `<span>${t.read}</span><span aria-hidden="true">＋</span>`;
 
     button.addEventListener('click', event => {
       event.stopPropagation();
@@ -231,7 +277,7 @@
   }
 
   /* ---------------------------------------------------------------
-     Tablón con las tres publicaciones más recientes
+     Three most recent publications: newest fixed, two previous below
      --------------------------------------------------------------- */
 
   const boardState = {
@@ -247,21 +293,20 @@
       title: latest.querySelector('#latest-post-title')?.textContent,
       body: latest.querySelector('#latest-post-body')?.textContent,
       displayDate: latest.querySelector('#latest-post-date')?.textContent,
-      tags: [latest.querySelector('#latest-post-tag')?.textContent || 'Archivo vivo'],
+      tags: [latest.querySelector('#latest-post-tag')?.textContent || t.livingArchive],
       imageUrl: image?.src || ''
     };
   }
 
-  function renderMainMedia(post) {
+  function renderMainMedia(rawPost) {
+    const post = localizePost(rawPost);
     const media = latest?.querySelector('#latest-post-media');
     if (!media) return;
 
     if (post.imageUrl) {
       const image = document.createElement('img');
       image.src = post.imageUrl;
-      image.alt = post.title
-        ? `Imagen de “${post.title}”`
-        : 'Imagen del archivo vivo';
+      image.alt = post.title ? t.imageOf(`“${post.title}”`) : t.livingArchive;
       media.replaceChildren(image);
       return;
     }
@@ -269,25 +314,25 @@
     const fallback = document.createElement('div');
     fallback.className = 'fallback-grid';
     fallback.setAttribute('aria-hidden', 'true');
-    fallback.innerHTML = '<span>archivo vivo</span>';
+    fallback.innerHTML = `<span>${t.archiveFallback}</span>`;
     media.replaceChildren(fallback);
   }
 
-  function renderMainTitle(post) {
+  function renderMainTitle(rawPost) {
+    const post = localizePost(rawPost);
     const heading = latest?.querySelector('#latest-post-title');
     if (!heading) return;
-
     heading.replaceChildren();
 
-    if (isMiniMoto(post)) {
+    if (isMiniMoto(rawPost)) {
       const link = document.createElement('a');
       link.href = 'https://minimotogallery.github.io/minimoto-gallery/';
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
-      link.textContent = post.title || 'Entrada de MiniMoto Gallery';
+      link.textContent = post.title || t.miniEntry;
       heading.append(link);
     } else {
-      heading.textContent = post.title || 'Entrada del archivo vivo';
+      heading.textContent = post.title || t.entry;
     }
   }
 
@@ -305,7 +350,7 @@
     return counter;
   }
 
-  function ensureMainExpand(post) {
+  function ensureMainExpand(rawPost) {
     const copy = latest?.querySelector('.feature-copy');
     if (!copy) return;
 
@@ -314,31 +359,26 @@
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'latest-expand';
-    button.innerHTML = `
-      <span>Leer entrada completa</span>
-      <span aria-hidden="true">＋</span>
-    `;
+    button.innerHTML = `<span>${t.read}</span><span aria-hidden="true">＋</span>`;
     button.addEventListener('click', event => {
       event.stopPropagation();
-      openPost(post, button, latest, true);
+      openPost(rawPost, button, latest, true);
     });
     copy.append(button);
   }
 
-  function secondaryCard(post, index) {
-    const button = document.createElement('button');
-    const minimoto = isMiniMoto(post);
-    const polyvalent = !minimoto && isPolyvalent(post);
+  function secondaryCard(rawPost, index) {
+    const post = localizePost(rawPost);
+    const minimoto = isMiniMoto(rawPost);
+    const polyvalent = !minimoto && isPolyvalent(rawPost);
 
+    const button = document.createElement('button');
     button.type = 'button';
     button.className = 'recent-post-card';
     if (minimoto) button.classList.add('is-minimoto');
     if (polyvalent) button.classList.add('is-polyvalent');
     button.dataset.postIndex = String(index);
-    button.setAttribute(
-      'aria-label',
-      `Abrir “${post.title || 'entrada del archivo'}” completa`
-    );
+    button.setAttribute('aria-label', t.open(post.title));
 
     const media = document.createElement('span');
     media.className = 'recent-post-media';
@@ -368,28 +408,29 @@
 
     const category = document.createElement('span');
     category.className = 'recent-post-category';
-    category.textContent = post.tags?.[0] || 'Archivo vivo';
+    category.textContent = post.tags?.[0] || t.livingArchive;
 
     const heading = document.createElement('strong');
-    heading.textContent = post.title || 'Entrada del archivo vivo';
+    heading.textContent = post.title || t.entry;
 
     const summary = document.createElement('span');
     summary.className = 'recent-post-summary';
     summary.textContent = excerpt(
-      post.body || `Publicado por ${post.author || 'Anónimo'}.`,
-      170
+      post.body || `${post.author || t.anonymous}.`,
+      LANG === 'zh' ? 95 : 170
     );
 
     const action = document.createElement('span');
     action.className = 'recent-post-action';
-    action.textContent = 'Abrir entrada completa ＋';
+    action.textContent = t.full;
 
     copy.append(meta, category, heading, summary, action);
     button.append(media, copy);
 
     button.addEventListener('click', () => {
-      openPost(post, button, button, true);
+      openPost(rawPost, button, button, true);
     });
+
     return button;
   }
 
@@ -401,7 +442,8 @@
       switcher = document.createElement('div');
       switcher.className = 'latest-post-switcher';
       switcher.setAttribute('role', 'list');
-      switcher.setAttribute('aria-label', 'Otras publicaciones recientes');
+      switcher.setAttribute('aria-label', t.previousAria);
+      switcher.dataset.label = t.previousLabel;
       latest.append(switcher);
     }
 
@@ -416,11 +458,12 @@
   function renderActivePost() {
     if (!latest || !boardState.posts.length) return;
 
-    const post = boardState.posts[0];
-    const minimoto = isMiniMoto(post);
-    const polyvalent = !minimoto && isPolyvalent(post);
+    const rawPost = boardState.posts[0];
+    const post = localizePost(rawPost);
+    const minimoto = isMiniMoto(rawPost);
+    const polyvalent = !minimoto && isPolyvalent(rawPost);
     const summary = excerpt(
-      post.body || `Publicado por ${post.author || 'Anónimo'}.`,
+      post.body || `${post.author || t.anonymous}.`,
       MAX_FEATURE_SUMMARY
     );
 
@@ -433,22 +476,20 @@
     const paragraph = latest.querySelector('#latest-post-body');
     const counter = ensurePositionCounter();
 
-    if (tag) tag.textContent = post.tags?.[0] || 'Archivo vivo';
+    if (tag) tag.textContent = post.tags?.[0] || t.livingArchive;
     if (dateNode) dateNode.textContent = formatDate(post.createdAt);
     if (paragraph) {
       paragraph.textContent = summary;
       paragraph.classList.add('latest-post-summary');
     }
     if (counter) {
-      counter.textContent =
-        `01 / ${String(boardState.posts.length).padStart(2, '0')}`;
+      counter.textContent = `01 / ${String(boardState.posts.length).padStart(2, '0')}`;
     }
 
-    renderMainTitle(post);
-    renderMainMedia(post);
-    ensureMainExpand(post);
+    renderMainTitle(rawPost);
+    renderMainMedia(rawPost);
+    ensureMainExpand(rawPost);
     renderSwitcher();
-
     latest.dataset.activeRecentIndex = '0';
   }
 
@@ -481,10 +522,7 @@
 
       boardState.posts = rawPosts
         .filter(post => post && post.approved !== false)
-        .sort(
-          (a, b) =>
-            (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0)
-        )
+        .sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0))
         .slice(0, 3);
 
       if (!boardState.posts.length) {
@@ -503,7 +541,7 @@
         renderActivePost();
         bindMainCardZoom();
       }
-      console.warn('No se pudo construir el tablón reciente:', error);
+      console.warn(t.loadError, error);
     } finally {
       boardState.loading = false;
     }
@@ -511,10 +549,7 @@
 
   function initAfterAppRender() {
     enhanceArchive();
-
-    if (archiveRoot?.querySelector('.archive-entry')) {
-      loadRecentBoard();
-    }
+    if (archiveRoot?.querySelector('.archive-entry')) loadRecentBoard();
   }
 
   if (archiveRoot) {

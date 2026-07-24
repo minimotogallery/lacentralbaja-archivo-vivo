@@ -1,0 +1,110 @@
+/* ================================================================
+   La Central Baja — multilingual interface
+   ================================================================ */
+
+.language-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  margin-left: 8px;
+  border-left: 1px solid var(--line);
+}
+
+.language-selector a {
+  min-width: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 10px;
+  border-right: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: none;
+}
+
+.language-selector a[aria-current="page"] {
+  background: var(--ink);
+  color: white;
+}
+
+.language-selector a:hover,
+.language-selector a:focus-visible {
+  background: var(--blue);
+  color: white;
+}
+
+.latest-post-switcher::before {
+  content: attr(data-label) !important;
+}
+
+/* Chinese needs a CJK text family rather than artificial letter spacing. */
+html[lang="zh-Hans"] {
+  --sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+          "Noto Sans CJK SC", "Source Han Sans SC", Arial, sans-serif;
+}
+
+html[lang="zh-Hans"] body {
+  font-family: var(--sans);
+}
+
+html[lang="zh-Hans"] h1,
+html[lang="zh-Hans"] h2,
+html[lang="zh-Hans"] h3,
+html[lang="zh-Hans"] .footer-title,
+html[lang="zh-Hans"] .plan-zone span {
+  letter-spacing: -.035em;
+  line-height: .96;
+  text-transform: none;
+}
+
+html[lang="zh-Hans"] .hero-copy h1 {
+  max-width: 10em;
+}
+
+html[lang="zh-Hans"] .ticker-track span,
+html[lang="zh-Hans"] .section-index,
+html[lang="zh-Hans"] .card-index,
+html[lang="zh-Hans"] .artist-role,
+html[lang="zh-Hans"] .archive-entry-type,
+html[lang="zh-Hans"] .recent-post-category,
+html[lang="zh-Hans"] .recent-post-action {
+  letter-spacing: .04em;
+  text-transform: none;
+}
+
+html[lang="zh-Hans"] .footer-title {
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: .12em;
+}
+
+html[lang="zh-Hans"] .statement h2 {
+  max-width: 18em;
+}
+
+@media (max-width: 980px) {
+  .site-nav {
+    flex-wrap: wrap;
+  }
+
+  .language-selector {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .language-selector {
+    width: 100%;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .language-selector a {
+    flex: 1;
+    min-height: 44px;
+  }
+
+  html[lang="zh-Hans"] .hero-copy h1 {
+    font-size: clamp(43px, 13vw, 68px);
+  }
+}

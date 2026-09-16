@@ -1,3 +1,4 @@
+import { registerNewsletterRoutes } from './newsletter-api.js';
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
@@ -145,6 +146,7 @@ app.get('/api/seed', (req, res) => {
 });
 
 registerStudyRoutes(app, db, requireAdmin);
+registerNewsletterRoutes(app, db, requireAdmin);
 
 app.get('/api/project', (req, res) => {
   res.json(getMergedSeed().project || {});
@@ -348,6 +350,8 @@ app.get(['/admin', '/admin/'], (req, res) => res.sendFile(path.join(__dirname, '
 
 // Training is a separate page within the existing website.
 app.get(['/estudios-alternativos', '/estudios-alternativos/'], (req, res) => res.sendFile(path.join(__dirname, 'estudios-alternativos.html')));
+
+app.get(['/newsletter', '/newsletter/'], (req,res) => res.sendFile(path.join(__dirname, 'newsletter.html')));
 
 // SPA-ish fallback
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));

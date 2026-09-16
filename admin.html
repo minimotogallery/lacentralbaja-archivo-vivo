@@ -50,7 +50,7 @@
       <button class="admin-tab" id="tabBoard" type="button" role="tab" aria-selected="true" aria-controls="panelBoard">Moderación</button>
       <button class="admin-tab" id="tabArtists" type="button" role="tab" aria-selected="false" aria-controls="panelArtists">Artistas</button>
       <button class="admin-tab" id="tabStudies" type="button" role="tab" aria-selected="false" aria-controls="panelStudies">Preinscripciones</button>
-    </div>
+    <button class="admin-tab" id="tabNewsletter" type="button" role="tab" aria-selected="false" aria-controls="panelNewsletter">Newsletter</button></div>
 
     <section class="admin-panel" id="panelBoard" role="tabpanel" aria-labelledby="tabBoard">
       <header class="admin-panel-head">
@@ -111,6 +111,7 @@
       <p class="admin-live" id="studiesLive" role="status" aria-live="polite"></p>
       <div class="admin-card-grid" id="studiesAdminList" aria-live="polite"></div>
     </section>
+<section class="admin-panel is-hidden" id="panelNewsletter" role="tabpanel" aria-labelledby="tabNewsletter"><h2>BAJA FRECUENCIA · Suscripciones</h2><p>Lista privada de personas que han solicitado recibir la newsletter. El envío de correos todavía no está conectado. No importar contactos sin su consentimiento.</p><button type="button" id="reloadNewsletter" class="button button-outline">Recargar</button><p id="newsletterLive" role="status"></p><div id="newsletterList"></div><p><a href="/newsletter#numero-000">Leer el número 000 ↗</a></p></section>
   </main>
 </body>
 </html>

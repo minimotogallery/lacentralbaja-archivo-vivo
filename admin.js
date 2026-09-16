@@ -48,7 +48,7 @@ function setupKey() {
       await adminApi('/api/admin/board?status=pending&limit=1');
       status.textContent = 'Clave válida. Gestión conectada.';
       status.className = 'is-valid';
-      await Promise.all([loadBoard(), loadArtists(), loadStudies()]);
+      await Promise.all([loadBoard(), loadArtists(), loadStudies(), loadNewsletter()]);
     } catch (error) {
       status.textContent = error.message === 'unauthorized' ? 'Clave incorrecta.' : 'No se pudo comprobar la conexión.';
       status.className = 'is-invalid';
@@ -322,7 +322,7 @@ function bootAdmin() {
   setupBoardFilters();
   setupArtistForm();
   $('#reloadStudies')?.addEventListener('click', loadStudies);
-  if (getKey()) Promise.all([loadBoard(), loadArtists(), loadStudies()]);
+  if (getKey()) Promise.all([loadBoard(), loadArtists(), loadStudies(), loadNewsletter()]);
   else {
     $('#boardAdminList').innerHTML = '<p class="empty-message">Introduce la clave para empezar.</p>';
     $('#artistsAdminList').innerHTML = '<p class="empty-message">Introduce la clave para gestionar perfiles.</p>';
@@ -331,3 +331,26 @@ function bootAdmin() {
 }
 
 bootAdmin();
+
+async function loadNewsletter() {
+ const list = $('#newsletterList'), live = $('#newsletterLive');
+ if (!list) return;
+ list.replaceChildren();
+ try {
+  const data = await adminApi('/api/admin/newsletter');
+  live.textContent = `${data.items.length} suscripciones. Envío de correos pendiente de conexión.`;
+  for (const item of data.items) {
+   const row = document.createElement('p');
+   row.textContent = `${item.email} · ${formatDate(item.createdAt)} `;
+   const button = document.createElement('button'); button.type='button'; button.textContent='Dar de baja';
+   button.addEventListener('click',async()=>{
+    if (!confirm('¿Eliminar la suscripción de '+item.email+'?')) return;
+    button.disabled=true;
+    try {await adminApi('/api/admin/newsletter/'+item.id,{method:'DELETE'});await loadNewsletter();}
+    catch {live.textContent='No se pudo completar la baja.';button.disabled=false;}
+   }); row.append(button); list.append(row);
+  }
+ } catch {live.textContent='Introduce una clave válida para consultar las suscripciones.';}
+}
+$('#reloadNewsletter')?.addEventListener('click',loadNewsletter);
+loadNewsletter();

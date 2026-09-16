@@ -48,7 +48,7 @@ function setupKey() {
       await adminApi('/api/admin/board?status=pending&limit=1');
       status.textContent = 'Clave válida. Gestión conectada.';
       status.className = 'is-valid';
-      await Promise.all([loadBoard(), loadArtists()]);
+      await Promise.all([loadBoard(), loadArtists(), loadStudies()]);
     } catch (error) {
       status.textContent = error.message === 'unauthorized' ? 'Clave incorrecta.' : 'No se pudo comprobar la conexión.';
       status.className = 'is-invalid';
@@ -273,15 +273,60 @@ function setupArtistForm() {
   $('#reloadArtists')?.addEventListener('click', loadArtists);
 }
 
+async function loadStudies() {
+  const list = $('#studiesAdminList');
+  const live = $('#studiesLive');
+  if (!list || !live) return;
+  list.replaceChildren();
+  live.textContent = 'Cargando preinscripciones…';
+  try {
+    const result = await adminApi('/api/admin/inscripciones');
+    live.textContent = result.total > result.items.length
+      ? `Mostrando las ${result.items.length} solicitudes más recientes de ${result.total}.`
+      : `${result.total} solicitudes recibidas.`;
+    const programs = { xenovision: 'Xenovisión · sábados', 'performance-arte-figital': 'Performance y arte fígital · domingos', ambos: 'Ambos programas' };
+    const payments = { general: 'General · 320 €', 'general-fraccionado': 'General · 4 × 80 €', reducida: 'Reducida · 240 € o 3 × 80 €', beca: 'Solicitud de beca completa' };
+    for (const row of result.items) {
+      const card = document.createElement('article');
+      card.className = 'admin-item-card';
+      const body = document.createElement('div');
+      body.className = 'admin-item-body';
+      const title = document.createElement('h3');
+      title.textContent = row.name;
+      body.append(title);
+      for (const line of [
+        `${row.reference} · ${formatDate(row.createdAt)} · ${row.status}`,
+        programs[row.program] || row.program,
+        payments[row.payment] || row.payment,
+        `Correo: ${row.email}`,
+        row.phone ? `Teléfono: ${row.phone}` : '',
+        `Investigación: ${row.motivation}`,
+        row.accessibility ? `Necesidades de acceso: ${row.accessibility}` : '',
+        `Origen: ${row.source}`
+      ].filter(Boolean)) {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = line;
+        body.append(paragraph);
+      }
+      card.append(body);
+      list.append(card);
+    }
+  } catch (error) {
+    live.textContent = error.message === 'unauthorized' ? 'Clave incorrecta.' : 'Introduce una clave válida para consultar las preinscripciones.';
+  }
+}
+
 function bootAdmin() {
   setupKey();
   setupTabs();
   setupBoardFilters();
   setupArtistForm();
-  if (getKey()) Promise.all([loadBoard(), loadArtists()]);
+  $('#reloadStudies')?.addEventListener('click', loadStudies);
+  if (getKey()) Promise.all([loadBoard(), loadArtists(), loadStudies()]);
   else {
     $('#boardAdminList').innerHTML = '<p class="empty-message">Introduce la clave para empezar.</p>';
     $('#artistsAdminList').innerHTML = '<p class="empty-message">Introduce la clave para gestionar perfiles.</p>';
+    $('#studiesLive').textContent = 'Introduce la clave para consultar las preinscripciones.';
   }
 }
 

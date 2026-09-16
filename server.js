@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
 import multer from 'multer';
 import { nanoid } from 'nanoid';
+import { registerStudyRoutes } from './studies-api.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,6 +89,13 @@ const upload = multer({
 });
 
 // --- static
+// Application records must never be downloadable as static database files.
+app.use((req, res, next) => {
+  let pathname;
+  try { pathname = decodeURIComponent(req.path); } catch { return res.sendStatus(400); }
+  if (/(?:^|\/)db\.sqlite(?:-(?:wal|shm))?$/i.test(pathname)) return res.sendStatus(404);
+  next();
+});
 app.use('/uploads', express.static(uploadsDir));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 // NOTE: do not serve DB dir in prod; keep for local debugging only.
@@ -135,6 +143,8 @@ function requireAdmin(req, res) {
 app.get('/api/seed', (req, res) => {
   res.json(getMergedSeed());
 });
+
+registerStudyRoutes(app, db, requireAdmin);
 
 app.get('/api/project', (req, res) => {
   res.json(getMergedSeed().project || {});
@@ -335,6 +345,9 @@ app.delete('/api/artists/:id', (req, res) => {
 
 // Admin UI
 app.get(['/admin', '/admin/'], (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+
+// Training is a separate page within the existing website.
+app.get(['/estudios-alternativos', '/estudios-alternativos/'], (req, res) => res.sendFile(path.join(__dirname, 'estudios-alternativos.html')));
 
 // SPA-ish fallback
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));

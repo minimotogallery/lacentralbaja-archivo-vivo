@@ -21,7 +21,7 @@ export function registerNewsletterRoutes(app, db, requireAdmin) {
     attempts.set(key,entry);
     const token = randomBytes(32).toString('hex');
     try {
-      const info = db.prepare('INSERT OR IGNORE INTO newsletter_subscribers (email,createdAt,consentVersion,unsubscribeHash) VALUES (?,?,?,?)').run(email, now, 'baja-frecuencia-v1', digest(token));
+      const info = db.prepare('INSERT OR IGNORE INTO newsletter_subscribers (email,createdAt,consentVersion,unsubscribeHash) VALUES (?,?,?,?)').run(email, now, 'newsletter-v2', digest(token));
       // Existing tokens are never replaced by unauthenticated requests.
       return res.status(200).json({ok:true, ...(info.changes ? {unsubscribeToken:token} : {})});
     } catch (error) {

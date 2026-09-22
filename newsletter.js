@@ -9,7 +9,7 @@ form.addEventListener('submit', async event => {
     const response = await fetch('/api/newsletter/subscribe', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:form.email.value,consent:form.consent.checked,website:form.website.value})});
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'No se pudo guardar la suscripción.');
-    status.textContent = 'Solicitud registrada. Si ya estabas en la lista, conservamos tu suscripción. Puedes leer el número 000 mientras preparamos el primer envío.';
+    status.textContent = 'Gracias. Tu suscripción a la newsletter está registrada.';
     const link = document.querySelector('#unsubscribeLink');
     link.hidden = !data.unsubscribeToken;
     if (data.unsubscribeToken) {link.href = '/newsletter#baja=' + data.unsubscribeToken;link.textContent = 'Guarda este enlace personal para darte de baja';}
@@ -18,6 +18,7 @@ form.addEventListener('submit', async event => {
   finally {button.disabled = false;}
 });
 function showUnsubscribe() {
+  if (location.hash === '#privacidad') document.querySelector('#privacidad').open = true;
   const token = location.hash.match(/^#baja=([a-f0-9]{64})$/)?.[1];
   if (!token) return;
   const panel = document.querySelector('#baja');

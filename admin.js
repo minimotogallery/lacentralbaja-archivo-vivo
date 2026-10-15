@@ -333,24 +333,58 @@ function bootAdmin() {
 bootAdmin();
 
 async function loadNewsletter() {
- const list = $('#newsletterList'), live = $('#newsletterLive');
- if (!list) return;
- list.replaceChildren();
- try {
-  const data = await adminApi('/api/admin/newsletter');
-  live.textContent = `${data.items.length} suscripciones. Envío de correos pendiente de conexión.`;
-  for (const item of data.items) {
-   const row = document.createElement('p');
-   row.textContent = `${item.email} · ${formatDate(item.createdAt)} `;
-   const button = document.createElement('button'); button.type='button'; button.textContent='Dar de baja';
-   button.addEventListener('click',async()=>{
-    if (!confirm('¿Eliminar la suscripción de '+item.email+'?')) return;
-    button.disabled=true;
-    try {await adminApi('/api/admin/newsletter/'+item.id,{method:'DELETE'});await loadNewsletter();}
-    catch {live.textContent='No se pudo completar la baja.';button.disabled=false;}
-   }); row.append(button); list.append(row);
+  const list = $('#newsletterList');
+  const live = $('#newsletterLive');
+  if (!list || !live) return;
+  list.replaceChildren();
+  live.textContent = 'Cargando suscripciones…';
+  try {
+    const data = await adminApi('/api/admin/newsletter');
+    const items = Array.isArray(data.items) ? data.items : [];
+    live.textContent = items.length === 1 ? '1 suscripción activa.' : `${items.length} suscripciones activas.`;
+
+    if (!items.length) {
+      const empty = document.createElement('p');
+      empty.className = 'newsletter-empty';
+      empty.textContent = 'Todavía no hay personas suscritas a la newsletter.';
+      list.append(empty);
+      return;
+    }
+
+    for (const item of items) {
+      const row = document.createElement('div');
+      row.className = 'newsletter-row';
+
+      const email = document.createElement('div');
+      email.className = 'newsletter-row-email';
+      email.textContent = item.email;
+
+      const date = document.createElement('div');
+      date.className = 'newsletter-row-date';
+      date.textContent = formatDate(item.createdAt);
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'button button-outline newsletter-remove';
+      button.textContent = 'Dar de baja';
+      button.addEventListener('click', async () => {
+        if (!confirm(`¿Eliminar la suscripción de ${item.email}?`)) return;
+        button.disabled = true;
+        try {
+          await adminApi(`/api/admin/newsletter/${encodeURIComponent(item.id)}`, { method: 'DELETE' });
+          await loadNewsletter();
+        } catch {
+          live.textContent = 'No se pudo completar la baja.';
+          button.disabled = false;
+        }
+      });
+
+      row.append(email, date, button);
+      list.append(row);
+    }
+  } catch (error) {
+    live.textContent = error.message === 'unauthorized' ? 'Clave incorrecta.' : 'Introduce una clave válida para consultar las suscripciones.';
   }
- } catch {live.textContent='Introduce una clave válida para consultar las suscripciones.';}
 }
-$('#reloadNewsletter')?.addEventListener('click',loadNewsletter);
+$('#reloadNewsletter')?.addEventListener('click', loadNewsletter);
 loadNewsletter();

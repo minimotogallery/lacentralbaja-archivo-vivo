@@ -482,6 +482,14 @@ function archiveEntry(rawPost) {
     link.rel = 'noopener noreferrer';
     link.textContent = post.title || 'MiniMoto Gallery';
     heading.append(link);
+  } else if (rawPost.id) {
+    const link = document.createElement('a');
+    const query = new URLSearchParams({ id: String(rawPost.id), lang: LANG });
+    link.href = `/noticia.html?${query.toString()}`;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = post.title || UI.unnamed;
+    heading.append(link);
   } else {
     heading.textContent = post.title || UI.unnamed;
   }
@@ -492,6 +500,23 @@ function archiveEntry(rawPost) {
     const paragraph = document.createElement('p');
     paragraph.textContent = post.body;
     content.append(paragraph);
+  }
+
+  if (Array.isArray(post.attachments) && post.attachments.length) {
+    const files = document.createElement('div');
+    files.className = 'archive-attachments';
+    post.attachments.forEach((attachment) => {
+      if (!attachment?.url) return;
+      const link = document.createElement('a');
+      link.className = 'archive-attachment-link';
+      link.href = attachment.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = `↳ ${attachment.name || 'documento'}`;
+      link.addEventListener('click', event => event.stopPropagation());
+      files.append(link);
+    });
+    content.append(files);
   }
 
   article.append(time, type, content);
@@ -557,9 +582,20 @@ function setupForm() {
     status.textContent = UI.sending;
 
     try {
+      const data = new FormData(form);
+      const body = String(data.get('body') || '').trim();
+      const image = data.get('image');
+      const attachments = data.getAll('attachments').filter(file => file instanceof File && file.size > 0);
+      const hasImage = image instanceof File && image.size > 0;
+      if (!body && !hasImage && !attachments.length) {
+        throw new Error('content_required');
+      }
+      if (attachments.length > 6 || attachments.some(file => file.size > 15 * 1024 * 1024)) {
+        throw new Error('attachments_invalid');
+      }
       const response = await fetch('/api/board/submit', {
         method: 'POST',
-        body: new FormData(form)
+        body: data
       });
       if (!response.ok) throw new Error(String(response.status));
       form.reset();

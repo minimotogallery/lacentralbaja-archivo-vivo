@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS board_posts (
   author TEXT,
   tags TEXT,
   imagePath TEXT,
+  attachments TEXT NOT NULL DEFAULT '[]',
   status TEXT NOT NULL DEFAULT 'approved'
 );
 CREATE INDEX IF NOT EXISTS idx_board_posts_createdAt ON board_posts(createdAt DESC);
@@ -67,6 +68,9 @@ try {
   if (!cols.includes('status')) {
     db.exec(`ALTER TABLE board_posts ADD COLUMN status TEXT NOT NULL DEFAULT 'approved'`);
   }
+  if (!cols.includes('attachments')) {
+    db.exec(`ALTER TABLE board_posts ADD COLUMN attachments TEXT NOT NULL DEFAULT '[]'`);
+  }
   db.exec(`CREATE INDEX IF NOT EXISTS idx_board_posts_status_createdAt ON board_posts(status, createdAt DESC)`);
 } catch {}
 
@@ -89,6 +93,85 @@ const upload = multer({
   }
 });
 
+const BOARD_ATTACHMENT_EXTENSIONS = new Set(['.pdf', '.txt', '.md', '.rtf', '.doc', '.docx', '.odt']);
+const BOARD_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
+
+const boardUpload = multer({
+  storage,
+  limits: { fileSize: 15 * 1024 * 1024, files: 7 },
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    if (file.fieldname === 'image') {
+      if (!file.mimetype?.startsWith('image/') || !BOARD_IMAGE_EXTENSIONS.has(ext)) {
+        return cb(new Error('Formato de imagen no permitido'));
+      }
+      return cb(null, true);
+    }
+    if (file.fieldname === 'attachments') {
+      if (!BOARD_ATTACHMENT_EXTENSIONS.has(ext)) {
+        return cb(new Error('Formato de documento no permitido'));
+      }
+      return cb(null, true);
+    }
+    return cb(new Error('Campo de archivo no permitido'));
+  }
+});
+
+const boardUploadFields = boardUpload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'attachments', maxCount: 6 }
+]);
+
+function safeAttachmentName(value) {
+  return path.basename(String(value || 'documento'))
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .slice(0, 180) || 'documento';
+}
+
+function boardFilesFromRequest(req) {
+  const image = req.files?.image?.[0];
+  const documents = Array.isArray(req.files?.attachments) ? req.files.attachments : [];
+  return {
+    imagePath: image?.filename || '',
+    attachments: documents.map(file => ({
+      name: safeAttachmentName(file.originalname),
+      path: file.filename,
+      mimeType: file.mimetype || 'application/octet-stream',
+      size: Number(file.size) || 0
+    }))
+  };
+}
+
+function parseAttachments(value) {
+  try {
+    const items = JSON.parse(value || '[]');
+    return Array.isArray(items) ? items.filter(item => item && item.path) : [];
+  } catch {
+    return [];
+  }
+}
+
+function publicAttachments(value) {
+  return parseAttachments(value).map(item => ({
+    name: safeAttachmentName(item.name),
+    mimeType: String(item.mimeType || 'application/octet-stream'),
+    size: Number(item.size) || 0,
+    url: `/uploads/${encodeURIComponent(item.path)}`
+  }));
+}
+
+function removeUploadFile(filename) {
+  const safeName = path.basename(String(filename || ''));
+  if (!safeName) return;
+  try { fs.unlinkSync(path.join(uploadsDir, safeName)); } catch {}
+}
+
+function removeBoardFiles(row) {
+  if (!row) return;
+  removeUploadFile(row.imagePath);
+  parseAttachments(row.attachments).forEach(item => removeUploadFile(item.path));
+}
+
 // --- static
 // Application records must never be downloadable as static database files.
 app.use((req, res, next) => {
@@ -97,7 +180,9 @@ app.use((req, res, next) => {
   if (/(?:^|\/)db\.sqlite(?:-(?:wal|shm))?$/i.test(pathname)) return res.sendStatus(404);
   next();
 });
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', express.static(uploadsDir, {
+  setHeaders: res => res.setHeader('X-Content-Type-Options', 'nosniff')
+}));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 // NOTE: do not serve DB dir in prod; keep for local debugging only.
 if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
@@ -193,13 +278,14 @@ app.get('/api/board', (req, res) => {
     body: r.body || '',
     author: r.author || 'Anónimo',
     tags: (r.tags || '').split(',').map(s => s.trim()).filter(Boolean),
-    imageUrl: r.imagePath ? `/uploads/${r.imagePath}` : ''
+    imageUrl: r.imagePath ? `/uploads/${r.imagePath}` : '',
+    attachments: publicAttachments(r.attachments)
   }));
   res.json(out);
 });
 
 // Public submit: creates pending
-app.post('/api/board/submit', upload.single('image'), (req, res) => {
+app.post('/api/board/submit', boardUploadFields, (req, res) => {
   const title = String(req.body.title || '').trim();
   if (!title) return res.status(400).json({ error: 'title_required' });
 
@@ -208,12 +294,15 @@ app.post('/api/board/submit', upload.single('image'), (req, res) => {
   const body = String(req.body.body || '').trim();
   const author = String(req.body.author || '').trim() || 'Anónimo';
   const tags = String(req.body.tags || '').trim();
-  const imagePath = req.file ? req.file.filename : '';
+  const { imagePath, attachments } = boardFilesFromRequest(req);
+  if (!body && !imagePath && !attachments.length) {
+    return res.status(400).json({ error: 'content_required' });
+  }
 
   db.prepare(
-    `INSERT INTO board_posts (id, createdAt, title, body, author, tags, imagePath, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`
-  ).run(id, createdAt, title, body, author, tags, imagePath);
+    `INSERT INTO board_posts (id, createdAt, title, body, author, tags, imagePath, attachments, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
+  ).run(id, createdAt, title, body, author, tags, imagePath, JSON.stringify(attachments));
 
   res.json({ ok: true, id });
 });
@@ -235,6 +324,7 @@ app.get('/api/admin/board', (req, res) => {
     author: r.author || 'Anónimo',
     tags: (r.tags || '').split(',').map(s => s.trim()).filter(Boolean),
     imageUrl: r.imagePath ? `/uploads/${r.imagePath}` : '',
+    attachments: publicAttachments(r.attachments),
     status: r.status
   }));
   res.json(out);
@@ -255,7 +345,7 @@ app.post('/api/admin/board/:id/reject', (req, res) => {
 });
 
 // Admin: create approved (used by current admin UI)
-app.post('/api/board', upload.single('image'), (req, res) => {
+app.post('/api/board', boardUploadFields, (req, res) => {
   if (!requireAdmin(req, res)) return;
 
   const title = String(req.body.title || '').trim();
@@ -266,12 +356,15 @@ app.post('/api/board', upload.single('image'), (req, res) => {
   const body = String(req.body.body || '').trim();
   const author = String(req.body.author || '').trim() || 'Anónimo';
   const tags = String(req.body.tags || '').trim();
-  const imagePath = req.file ? req.file.filename : '';
+  const { imagePath, attachments } = boardFilesFromRequest(req);
+  if (!body && !imagePath && !attachments.length) {
+    return res.status(400).json({ error: 'content_required' });
+  }
 
   db.prepare(
-    `INSERT INTO board_posts (id, createdAt, title, body, author, tags, imagePath, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'approved')`
-  ).run(id, createdAt, title, body, author, tags, imagePath);
+    `INSERT INTO board_posts (id, createdAt, title, body, author, tags, imagePath, attachments, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved')`
+  ).run(id, createdAt, title, body, author, tags, imagePath, JSON.stringify(attachments));
 
   res.json({
     id,
@@ -280,14 +373,17 @@ app.post('/api/board', upload.single('image'), (req, res) => {
     body,
     author,
     tags: tags.split(',').map(s => s.trim()).filter(Boolean),
-    imageUrl: imagePath ? `/uploads/${imagePath}` : ''
+    imageUrl: imagePath ? `/uploads/${imagePath}` : '',
+    attachments: publicAttachments(JSON.stringify(attachments))
   });
 });
 
 app.delete('/api/board/:id', (req, res) => {
   if (!requireAdmin(req, res)) return;
   const id = String(req.params.id || '');
+  const row = db.prepare('SELECT imagePath, attachments FROM board_posts WHERE id = ?').get(id);
   const info = db.prepare('DELETE FROM board_posts WHERE id = ?').run(id);
+  if (info.changes) removeBoardFiles(row);
   res.json({ ok: true, deleted: info.changes });
 });
 
@@ -355,6 +451,15 @@ app.get(['/newsletter', '/newsletter/'], (req,res) => res.sendFile(path.join(__d
 
 // SPA-ish fallback
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+// Upload validation errors are user input errors, not server failures.
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError || /Formato de|Campo de archivo/.test(String(error?.message || ''))) {
+    return res.status(400).json({ error: 'invalid_upload', message: String(error.message || 'Archivo no válido') });
+  }
+  console.error('request_failed', error);
+  res.status(500).json({ error: 'server_error' });
+});
 
 app.listen(PORT, () => {
   console.log(`Archivo vivo running on http://localhost:${PORT}`);

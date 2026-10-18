@@ -212,9 +212,10 @@
           <div class="form-grid">
             <label><span>Title</span><input name="title" required /></label>
             <label><span>Author</span><input name="author" /></label>
-            <label class="wide"><span>Text</span><textarea name="body" rows="5" required></textarea></label>
+            <label class="wide"><span>Text</span><textarea name="body" rows="5" placeholder="Optional when attaching a document"></textarea></label>
             <label><span>Tags</span><input name="tags" placeholder="process, installation, encounter" /></label>
-            <label><span>Image</span><input name="image" type="file" accept="image/*" /></label>
+            <label><span>Cover image</span><input name="image" type="file" accept=".jpg,.jpeg,.png,.webp,.gif,image/*" /></label>
+            <label class="wide"><span>Attached documents</span><input name="attachments" type="file" multiple accept=".pdf,.txt,.md,.rtf,.doc,.docx,.odt,application/pdf,text/plain,text/markdown,application/rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text" /><small>PDF, TXT, MD, RTF, DOC, DOCX or ODT · up to 6 files · 15 MB each.</small></label>
           </div>
           <div class="form-foot">
             <p>Contributions are reviewed before publication.</p>

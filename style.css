@@ -438,3 +438,40 @@ button, input, textarea { font: inherit; }
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
+
+
+/* Documentos adjuntos del archivo vivo */
+.form-grid label small {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1.45;
+}
+.form-grid input[type="file"] {
+  min-height: 46px;
+}
+.archive-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.archive-attachment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid currentColor;
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.archive-attachment-link:hover,
+.archive-attachment-link:focus-visible {
+  background: var(--ink);
+  color: white;
+}

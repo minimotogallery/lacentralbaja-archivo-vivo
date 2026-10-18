@@ -212,9 +212,10 @@
           <div class="form-grid">
             <label><span>Título</span><input name="title" required /></label>
             <label><span>Autoría</span><input name="author" /></label>
-            <label class="wide"><span>Texto</span><textarea name="body" rows="5" required></textarea></label>
+            <label class="wide"><span>Texto</span><textarea name="body" rows="5" placeholder="Opcional si adjuntas un documento"></textarea></label>
             <label><span>Etiquetas</span><input name="tags" placeholder="proceso, montaje, encuentro" /></label>
-            <label><span>Imagen</span><input name="image" type="file" accept="image/*" /></label>
+            <label><span>Imagen de portada</span><input name="image" type="file" accept=".jpg,.jpeg,.png,.webp,.gif,image/*" /></label>
+            <label class="wide"><span>Documentos adjuntos</span><input name="attachments" type="file" multiple accept=".pdf,.txt,.md,.rtf,.doc,.docx,.odt,application/pdf,text/plain,text/markdown,application/rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text" /><small>PDF, TXT, MD, RTF, DOC, DOCX u ODT · hasta 6 archivos · 15 MB por archivo.</small></label>
           </div>
           <div class="form-foot">
             <p>Las aportaciones se revisan antes de publicarse.</p>

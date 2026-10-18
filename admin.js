@@ -117,6 +117,27 @@ function createBoardCard(post) {
     body.append(tags);
   }
 
+  if (Array.isArray(post.attachments) && post.attachments.length) {
+    const files = document.createElement('div');
+    files.className = 'admin-attachments';
+    const label = document.createElement('p');
+    label.className = 'admin-item-meta';
+    label.textContent = `${post.attachments.length} documento${post.attachments.length === 1 ? '' : 's'} adjunto${post.attachments.length === 1 ? '' : 's'}`;
+    files.append(label);
+    post.attachments.forEach((attachment) => {
+      if (!attachment?.url) return;
+      const link = document.createElement('a');
+      link.className = 'admin-attachment-link';
+      link.href = attachment.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      const mb = attachment.size ? ` · ${(attachment.size / 1024 / 1024).toFixed(2)} MB` : '';
+      link.textContent = `${attachment.name || 'Documento'}${mb} ↗`;
+      files.append(link);
+    });
+    body.append(files);
+  }
+
   const actions = document.createElement('div');
   actions.className = 'admin-item-actions';
   if (adminState.boardStatus === 'pending') {

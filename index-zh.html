@@ -212,9 +212,10 @@
           <div class="form-grid">
             <label><span>标题</span><input name="title" required /></label>
             <label><span>作者</span><input name="author" /></label>
-            <label class="wide"><span>正文</span><textarea name="body" rows="5" required></textarea></label>
+            <label class="wide"><span>正文</span><textarea name="body" rows="5" placeholder="如附加文档则正文可选"></textarea></label>
             <label><span>标签</span><input name="tags" placeholder="过程、布展、相遇" /></label>
-            <label><span>图片</span><input name="image" type="file" accept="image/*" /></label>
+            <label><span>封面图片</span><input name="image" type="file" accept=".jpg,.jpeg,.png,.webp,.gif,image/*" /></label>
+            <label class="wide"><span>附件文档</span><input name="attachments" type="file" multiple accept=".pdf,.txt,.md,.rtf,.doc,.docx,.odt,application/pdf,text/plain,text/markdown,application/rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text" /><small>PDF、TXT、MD、RTF、DOC、DOCX 或 ODT · 最多 6 个文件 · 每个 15 MB。</small></label>
           </div>
           <div class="form-foot">
             <p>提交内容会在发布前审核。</p>

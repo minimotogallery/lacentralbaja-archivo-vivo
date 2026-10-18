@@ -293,3 +293,28 @@
   .newsletter-row-date { grid-column: 1; }
   .newsletter-remove { grid-column: 2; grid-row: 1 / span 2; }
 }
+
+
+.admin-attachments {
+  display: grid;
+  gap: 7px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--admin-line, #b8c1ca);
+}
+.admin-attachment-link {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid currentColor;
+  overflow-wrap: anywhere;
+  font-family: var(--mono);
+  font-size: 9px;
+  text-decoration: none;
+}
+.admin-attachment-link:hover,
+.admin-attachment-link:focus-visible {
+  background: var(--ink);
+  color: white;
+}

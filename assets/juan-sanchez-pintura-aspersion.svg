@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Juan Sánchez — Pintura por aspersión</title>
+  <desc id="desc">Cartela gráfica editorial de la exposición de Juan Sánchez en MiniMoto Gallery.</desc>
+  <rect width="1600" height="1000" fill="#F4F3EF"/>
+  <path d="M0 180H1600M0 820H1600M260 0V1000M1340 0V1000" stroke="#0A0A0A" stroke-width="2"/>
+  <circle cx="1320" cy="92" r="18" fill="#0A0A0A"/>
+  <circle cx="1372" cy="92" r="18" fill="#1C37FF"/>
+  <circle cx="1424" cy="92" r="18" fill="#0A0A0A"/>
+  <text x="80" y="92" fill="#0A0A0A" font-family="Arial, Helvetica, sans-serif" font-size="28" letter-spacing="4">MINIMOTO GALLERY</text>
+  <text x="80" y="250" fill="#1C37FF" font-family="Arial, Helvetica, sans-serif" font-size="25" letter-spacing="3">30.10.2026 · 20:00 / MM-005</text>
+  <text x="80" y="430" fill="#0A0A0A" font-family="Georgia, Times, serif" font-size="108">Juan Sánchez</text>
+  <text x="80" y="560" fill="#0A0A0A" font-family="Georgia, Times, serif" font-size="132" font-style="italic">Pintura por</text>
+  <text x="80" y="690" fill="#0A0A0A" font-family="Georgia, Times, serif" font-size="132" font-style="italic">aspersión</text>
+  <text x="80" y="900" fill="#0A0A0A" font-family="Arial, Helvetica, sans-serif" font-size="24" letter-spacing="2">COMISARIADA POR CRISTINA LUNA RODRÍGUEZ · LA CENTRAL BAJA · MURCIA</text>
+</svg>

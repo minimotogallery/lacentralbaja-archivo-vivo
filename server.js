@@ -74,6 +74,57 @@ try {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_board_posts_status_createdAt ON board_posts(status, createdAt DESC)`);
 } catch {}
 
+// One-time profile replacement: Juan Sánchez + Cristina Luna Rodríguez replace Joel Blanco.
+try {
+  const sharedSource = path.join(__dirname, 'assets', 'juan-sanchez-cristina-luna.jpeg');
+  const sharedUpload = 'juan-sanchez-cristina-luna.jpeg';
+  const sharedTarget = path.join(UPLOADS_DIR, sharedUpload);
+
+  if (fs.existsSync(sharedSource)) {
+    const sourceBytes = fs.readFileSync(sharedSource);
+    const targetBytes = fs.existsSync(sharedTarget) ? fs.readFileSync(sharedTarget) : null;
+    if (!targetBytes || !sourceBytes.equals(targetBytes)) {
+      fs.writeFileSync(sharedTarget, sourceBytes);
+    }
+
+    const insertArtist = db.prepare(
+      'INSERT OR IGNORE INTO artists (id, createdAt, name, bio, role, link, tags, imagePath) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+
+    const tx = db.transaction(() => {
+      insertArtist.run(
+        'juan-sanchez-1987',
+        1792604102002,
+        'Juan Sánchez',
+        'Juan Sánchez (Murcia, 1987) es artista visual e investigador. Su práctica investiga la pintura encubierta, el bricolaje y los sistemas pictóricos automatizados. En Pintura por aspersión continúa la investigación iniciada en Pintura por goteo, desplazando la pintura hacia dispositivos, circuitos e infraestructuras que intervienen en su producción.',
+        'Artista visual e investigador',
+        'https://adondelohago.blogspot.com/',
+        'pintura encubierta, bricolaje, sistemas pictóricos automatizados, pintura, investigación artística',
+        sharedUpload
+      );
+      insertArtist.run(
+        'cristina-luna-rodriguez',
+        1792604102001,
+        'Cristina Luna Rodríguez',
+        'Cristina Luna Rodríguez es comisaria de arte y productora cultural vinculada a Madrid, Guatemala y Taipéi. Comisaría Pintura por aspersión, exposición de Juan Sánchez en MiniMoto Gallery, La Central Baja. Inauguración: 30/10/2026, 20:00; C/ Pinatar 3, Murcia; entrada libre.',
+        'Comisaria de arte y productora cultural',
+        '',
+        'comisariado, producción cultural, arte contemporáneo, Madrid, Guatemala, Taipéi, MiniMoto Gallery',
+        sharedUpload
+      );
+
+      const juan = db.prepare('SELECT id, imagePath FROM artists WHERE id = ?').get('juan-sanchez-1987');
+      const cristina = db.prepare('SELECT id, imagePath FROM artists WHERE id = ?').get('cristina-luna-rodriguez');
+      if (juan?.imagePath === sharedUpload && cristina?.imagePath === sharedUpload && fs.existsSync(sharedTarget)) {
+        db.prepare('DELETE FROM artists WHERE name = ?').run('Joel Blanco');
+      }
+    });
+    tx();
+  }
+} catch (error) {
+  console.error('profile replacement migration failed', error);
+}
+
 // --- uploads
 const uploadsDir = UPLOADS_DIR;
 const storage = multer.diskStorage({

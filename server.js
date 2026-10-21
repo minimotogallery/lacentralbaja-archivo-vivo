@@ -107,11 +107,11 @@ try {
       ).run(
         'minimoto-pintura-aspersion-2026',
         1792604102002,
-        'Juan Sánchez × Cristina Luna Rodríguez',
-        'Juan Sánchez (Murcia, 1987), artista visual e investigador, trabaja sobre la pintura encubierta, el bricolaje y los sistemas pictóricos automatizados. En Pintura por aspersión continúa la investigación iniciada en Pintura por goteo. Cristina Luna Rodríguez, comisaria de arte y productora cultural vinculada a Madrid, Guatemala y Taipéi, comisaría la exposición. MiniMoto Gallery · La Central Baja · 30/10/2026 · 20:00 · C/ Pinatar 3, Murcia · entrada libre.',
-        'MINIMOTO GALLERY · TERRITORIO TEMPORAL · PINTURA POR ASPERSIÓN',
-        'https://minimotogallery.github.io/minimoto-gallery/',
-        'MiniMoto Gallery, temporal, Juan Sánchez, Cristina Luna Rodríguez, Pintura por aspersión',
+        'Juan Sánchez',
+        'Juan Sánchez (Murcia, 1987) es artista visual e investigador. Su práctica investiga la pintura encubierta, el bricolaje y los sistemas pictóricos automatizados. En Pintura por aspersión continúa la investigación iniciada en Pintura por goteo. La exposición está comisariada por Cristina Luna Rodríguez, comisaria de arte y productora cultural vinculada a Madrid, Guatemala y Taipéi. MiniMoto Gallery · La Central Baja · 30/10/2026 · 20:00 · C/ Pinatar 3, Murcia · entrada libre.',
+        'ARTISTA VISUAL E INVESTIGADOR · MINIMOTO GALLERY · TERRITORIO TEMPORAL',
+        'https://adondelohago.blogspot.com/',
+        'MiniMoto Gallery, territorio temporal, Juan Sánchez, Pintura por aspersión, Cristina Luna Rodríguez, comisariado',
         sharedUpload
       );
     });

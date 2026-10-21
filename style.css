@@ -234,21 +234,6 @@ button, input, textarea { font: inherit; }
   color: white;
 }
 
-.artist-card.is-minimoto .artist-media {
-  background: var(--blue);
-}
-
-.artist-card.is-minimoto .artist-media img {
-  filter: grayscale(1) contrast(1.05);
-  mix-blend-mode: multiply;
-  opacity: .82;
-}
-
-.artist-card.is-minimoto:hover .artist-media img {
-  filter: grayscale(1) contrast(1.05);
-  transform: scale(1.015);
-}
-
 .artist-card.is-minimoto .artist-number {
   background: white;
   color: var(--blue);
